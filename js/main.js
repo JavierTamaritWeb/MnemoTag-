@@ -407,6 +407,35 @@
         existingErrors.forEach(error => error.remove());
       },
 
+      // Warning messages
+      showWarning: function(message, duration = 4000) {
+        const warningContainer = document.createElement('div');
+        warningContainer.className = 'warning-toast';
+        warningContainer.innerHTML = `
+          <div class="warning-content">
+            <span class="warning-icon">⚠️</span>
+            <span class="warning-message">${SecurityManager.sanitizeText(message)}</span>
+            <button class="warning-close" onclick="this.parentElement.parentElement.remove()">×</button>
+          </div>
+        `;
+        
+        document.body.appendChild(warningContainer);
+        
+        // Auto-hide after duration
+        if (duration > 0) {
+          setTimeout(() => {
+            if (warningContainer.parentNode) {
+              warningContainer.remove();
+            }
+          }, duration);
+        }
+      },
+
+      hideWarning: function() {
+        const existingWarnings = document.querySelectorAll('.warning-toast');
+        existingWarnings.forEach(warning => warning.remove());
+      },
+
       // Enhanced success messages
       showSuccess: function(message, duration = 3000) {
         const successContainer = document.createElement('div');
@@ -842,48 +871,257 @@
         return sanitized.length <= maxLength && sanitized.length > 0;
       },
 
-      // Validación de archivos de imagen
+      // Validación de archivos de imagen mejorada
       validateImageFile: function(file) {
         const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/avif'];
         const maxSize = 25 * 1024 * 1024; // 25MB
+        const maxDimensions = {
+          width: 8000,  // Máximo 8000px de ancho
+          height: 8000  // Máximo 8000px de alto
+        };
         
         const validation = {
           isValid: true,
-          errors: []
+          errors: [],
+          warnings: [],
+          fileInfo: {
+            name: file?.name || 'Archivo desconocido',
+            size: file?.size || 0,
+            type: file?.type || 'Tipo desconocido',
+            sizeFormatted: file ? this.formatFileSize(file.size) : '0 B'
+          }
         };
 
+        // Validación de existencia del archivo
         if (!file) {
           validation.isValid = false;
-          validation.errors.push('No se ha seleccionado ningún archivo');
+          validation.errors.push({
+            type: 'MISSING_FILE',
+            message: 'No se ha seleccionado ningún archivo',
+            details: 'Por favor, selecciona una imagen para continuar.'
+          });
           return validation;
         }
 
+        // Validación de tipo MIME
         if (!allowedTypes.includes(file.type)) {
           validation.isValid = false;
-          validation.errors.push('Formato de archivo no válido. Solo se permiten JPG, JPEG, PNG, WEBP y AVIF');
+          validation.errors.push({
+            type: 'INVALID_FORMAT',
+            message: 'Formato de archivo no válido',
+            details: `Formato detectado: ${file.type}. Solo se permiten: JPG, JPEG, PNG, WEBP y AVIF.`,
+            allowedFormats: ['JPG', 'JPEG', 'PNG', 'WEBP', 'AVIF']
+          });
         }
 
+        // Validación de tamaño de archivo
         if (file.size > maxSize) {
           validation.isValid = false;
-          validation.errors.push('El archivo es demasiado grande. El tamaño máximo es 25 MB');
+          validation.errors.push({
+            type: 'FILE_TOO_LARGE',
+            message: 'El archivo es demasiado grande',
+            details: `Tamaño actual: ${this.formatFileSize(file.size)}. Tamaño máximo permitido: ${this.formatFileSize(maxSize)}.`,
+            currentSize: file.size,
+            maxSize: maxSize
+          });
         }
 
-        // Validación adicional del nombre del archivo
+        // Validación del nombre del archivo
         const fileName = file.name;
         if (fileName.length > 255) {
           validation.isValid = false;
-          validation.errors.push('El nombre del archivo es demasiado largo');
+          validation.errors.push({
+            type: 'FILENAME_TOO_LONG',
+            message: 'El nombre del archivo es demasiado largo',
+            details: `Longitud actual: ${fileName.length} caracteres. Máximo permitido: 255 caracteres.`
+          });
+        }
+
+        // Validación de caracteres especiales en el nombre
+        const invalidChars = /[<>:"/\\|?*\x00-\x1f]/g;
+        if (invalidChars.test(fileName)) {
+          validation.warnings.push({
+            type: 'INVALID_FILENAME_CHARS',
+            message: 'El nombre contiene caracteres no recomendados',
+            details: 'Se recomienda usar solo letras, números, guiones y puntos.'
+          });
         }
 
         // Verificar extensión del archivo
-        const extension = fileName.split('.').pop().toLowerCase();
+        const extension = fileName.split('.').pop()?.toLowerCase();
         const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'avif'];
-        if (!allowedExtensions.includes(extension)) {
+        
+        if (!extension || !allowedExtensions.includes(extension)) {
           validation.isValid = false;
-          validation.errors.push('Extensión de archivo no válida');
+          validation.errors.push({
+            type: 'INVALID_EXTENSION',
+            message: 'Extensión de archivo no válida',
+            details: `Extensión detectada: .${extension || 'ninguna'}. Extensiones permitidas: ${allowedExtensions.join(', ')}.`
+          });
+        }
+
+        // Verificación adicional: MIME vs extensión
+        const mimeToExtensions = {
+          'image/jpeg': ['jpg', 'jpeg'],
+          'image/png': ['png'],
+          'image/webp': ['webp'],
+          'image/avif': ['avif']
+        };
+
+        const expectedExtensions = mimeToExtensions[file.type];
+        if (expectedExtensions && extension && !expectedExtensions.includes(extension)) {
+          validation.warnings.push({
+            type: 'MIME_EXTENSION_MISMATCH',
+            message: 'La extensión no coincide completamente con el tipo de archivo',
+            details: `Tipo detectado: ${file.type}, extensión: .${extension}. Esto podría indicar un problema con el archivo.`
+          });
+        }
+
+        // Validaciones adicionales para archivos pequeños (posibles archivos corruptos)
+        if (file.size < 1024) { // Menos de 1KB
+          validation.warnings.push({
+            type: 'SUSPICIOUSLY_SMALL',
+            message: 'El archivo es muy pequeño',
+            details: 'Archivos de imagen muy pequeños podrían estar corruptos o vacíos.'
+          });
         }
 
         return validation;
+      },
+
+      // Validación de dimensiones de imagen (se ejecuta después de cargar)
+      validateImageDimensions: function(image, maxDimensions = { width: 8000, height: 8000 }) {
+        const validation = {
+          isValid: true,
+          errors: [],
+          warnings: [],
+          dimensions: {
+            width: image.width || image.naturalWidth || 0,
+            height: image.height || image.naturalHeight || 0
+          }
+        };
+
+        const { width, height } = validation.dimensions;
+
+        // Validar dimensiones máximas
+        if (width > maxDimensions.width || height > maxDimensions.height) {
+          validation.isValid = false;
+          validation.errors.push({
+            type: 'DIMENSIONS_TOO_LARGE',
+            message: 'Las dimensiones de la imagen son demasiado grandes',
+            details: `Dimensiones actuales: ${width}x${height}px. Máximo permitido: ${maxDimensions.width}x${maxDimensions.height}px.`,
+            currentDimensions: { width, height },
+            maxDimensions: maxDimensions
+          });
+        }
+
+        // Validar dimensiones mínimas
+        if (width < 1 || height < 1) {
+          validation.isValid = false;
+          validation.errors.push({
+            type: 'INVALID_DIMENSIONS',
+            message: 'Dimensiones de imagen inválidas',
+            details: `Dimensiones detectadas: ${width}x${height}px. Las dimensiones deben ser mayores a 0.`
+          });
+        }
+
+        // Advertencias para imágenes muy grandes
+        if (width > 4000 || height > 4000) {
+          validation.warnings.push({
+            type: 'LARGE_DIMENSIONS',
+            message: 'Imagen de dimensiones grandes detectada',
+            details: `Dimensiones: ${width}x${height}px. El procesamiento podría ser más lento.`
+          });
+        }
+
+        // Advertencias para imágenes muy pequeñas
+        if (width < 100 || height < 100) {
+          validation.warnings.push({
+            type: 'SMALL_DIMENSIONS',
+            message: 'Imagen de dimensiones pequeñas',
+            details: `Dimensiones: ${width}x${height}px. La calidad podría verse afectada al redimensionar.`
+          });
+        }
+
+        return validation;
+      },
+
+      // Generar preview del archivo antes de cargar
+      generateFilePreview: function(file, callback) {
+        if (!file || typeof callback !== 'function') {
+          callback(null, 'Parámetros inválidos para generar preview');
+          return;
+        }
+
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+          try {
+            const img = new Image();
+            
+            img.onload = function() {
+              // Crear canvas para el preview
+              const previewCanvas = document.createElement('canvas');
+              const previewCtx = previewCanvas.getContext('2d');
+              
+              // Calcular dimensiones del preview (máximo 300px)
+              const maxPreviewSize = 300;
+              let previewWidth = img.width;
+              let previewHeight = img.height;
+              
+              if (previewWidth > maxPreviewSize || previewHeight > maxPreviewSize) {
+                const ratio = Math.min(maxPreviewSize / previewWidth, maxPreviewSize / previewHeight);
+                previewWidth = previewWidth * ratio;
+                previewHeight = previewHeight * ratio;
+              }
+              
+              previewCanvas.width = previewWidth;
+              previewCanvas.height = previewHeight;
+              
+              // Dibujar preview
+              previewCtx.drawImage(img, 0, 0, previewWidth, previewHeight);
+              
+              const previewData = {
+                dataUrl: previewCanvas.toDataURL('image/jpeg', 0.8),
+                originalDimensions: { width: img.width, height: img.height },
+                previewDimensions: { width: previewWidth, height: previewHeight },
+                fileInfo: {
+                  name: file.name,
+                  size: SecurityManager.formatFileSize(file.size),
+                  type: file.type,
+                  lastModified: new Date(file.lastModified).toLocaleString()
+                }
+              };
+              
+              callback(previewData, null);
+            };
+            
+            img.onerror = function() {
+              callback(null, 'Error al cargar la imagen para preview');
+            };
+            
+            img.src = e.target.result;
+          } catch (error) {
+            callback(null, 'Error al procesar el archivo: ' + error.message);
+          }
+        };
+        
+        reader.onerror = function() {
+          callback(null, 'Error al leer el archivo');
+        };
+        
+        reader.readAsDataURL(file);
+      },
+
+      // Formatear tamaño de archivo
+      formatFileSize: function(bytes) {
+        if (!bytes || bytes === 0) return '0 B';
+        
+        const units = ['B', 'KB', 'MB', 'GB'];
+        const k = 1024;
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + units[i];
       },
 
       // Validación de metadatos
@@ -1626,7 +1864,7 @@
       }
     }
 
-    // Enhanced file handling with security validation
+    // Enhanced file handling with security validation and preview
     function handleFile(file) {
       // Limpiar errores anteriores
       UIManager.hideError();
@@ -1635,12 +1873,275 @@
       const validation = SecurityManager.validateImageFile(file);
       
       if (!validation.isValid) {
-        validation.errors.forEach(error => UIManager.showError(error));
+        // Mostrar errores específicos con detalles
+        validation.errors.forEach(error => {
+          let errorMessage = error.message;
+          if (error.details) {
+            errorMessage += `: ${error.details}`;
+          }
+          UIManager.showError(errorMessage);
+        });
         return;
       }
 
-      // Mostrar estado de carga
-      UIManager.showLoadingState('Procesando archivo...');
+      // Mostrar advertencias si existen
+      if (validation.warnings && validation.warnings.length > 0) {
+        validation.warnings.forEach(warning => {
+          console.warn('Advertencia:', warning.message, warning.details);
+          // Opcionalmente mostrar advertencias al usuario
+          UIManager.showWarning && UIManager.showWarning(warning.message);
+        });
+      }
+
+      // Mostrar preview del archivo antes de cargar
+      UIManager.showLoadingState('Generando preview...');
+      
+      SecurityManager.generateFilePreview(file, function(previewData, error) {
+        if (error) {
+          UIManager.hideLoadingState();
+          UIManager.showError('Error al generar preview: ' + error);
+          return;
+        }
+
+        // Mostrar preview al usuario
+        showFilePreview(previewData, function(userConfirmed) {
+          if (!userConfirmed) {
+            UIManager.hideLoadingState();
+            return;
+          }
+
+          // Usuario confirmó, proceder con la carga
+          loadImageWithValidation(file, previewData.originalDimensions);
+        });
+      });
+    }
+
+    // Función para mostrar preview del archivo
+    function showFilePreview(previewData, callback) {
+      const previewModal = document.createElement('div');
+      previewModal.className = 'file-preview-modal';
+      previewModal.innerHTML = `
+        <div class="preview-overlay">
+          <div class="preview-container">
+            <div class="preview-header">
+              <h3>Vista previa del archivo</h3>
+              <button class="preview-close" type="button">&times;</button>
+            </div>
+            <div class="preview-content">
+              <div class="preview-image-container">
+                <img src="${previewData.dataUrl}" alt="Preview" class="preview-image">
+              </div>
+              <div class="preview-info">
+                <h4>Información del archivo:</h4>
+                <ul>
+                  <li><strong>Nombre:</strong> ${previewData.fileInfo.name}</li>
+                  <li><strong>Tamaño:</strong> ${previewData.fileInfo.size}</li>
+                  <li><strong>Tipo:</strong> ${previewData.fileInfo.type}</li>
+                  <li><strong>Dimensiones:</strong> ${previewData.originalDimensions.width}x${previewData.originalDimensions.height}px</li>
+                  <li><strong>Modificado:</strong> ${previewData.fileInfo.lastModified}</li>
+                </ul>
+              </div>
+            </div>
+            <div class="preview-actions">
+              <button class="btn btn-secondary preview-cancel" type="button">Cancelar</button>
+              <button class="btn btn-primary preview-confirm" type="button">Cargar imagen</button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Agregar estilos CSS para el modal de preview
+      if (!document.getElementById('preview-modal-styles')) {
+        const previewStyles = document.createElement('style');
+        previewStyles.id = 'preview-modal-styles';
+        previewStyles.textContent = `
+          .file-preview-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+          
+          .preview-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+          }
+          
+          .preview-container {
+            position: relative;
+            background: var(--bg-card, #ffffff);
+            border-radius: 12px;
+            max-width: 600px;
+            max-height: 80vh;
+            margin: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+          }
+          
+          .preview-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color, #e2e8f0);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-secondary, #f8f9fa);
+          }
+          
+          .preview-header h3 {
+            margin: 0;
+            color: var(--text-primary, #0f172a);
+            font-size: 1.25rem;
+            font-weight: 600;
+          }
+          
+          .preview-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-secondary, #64748b);
+            padding: 4px;
+            line-height: 1;
+          }
+          
+          .preview-close:hover {
+            color: var(--text-primary, #0f172a);
+          }
+          
+          .preview-content {
+            padding: 20px;
+            display: flex;
+            gap: 20px;
+            flex: 1;
+            overflow: auto;
+          }
+          
+          .preview-image-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-tertiary, #f1f5f9);
+            border-radius: 8px;
+            min-height: 200px;
+          }
+          
+          .preview-image {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+          }
+          
+          .preview-info {
+            flex: 1;
+            min-width: 250px;
+          }
+          
+          .preview-info h4 {
+            margin: 0 0 12px 0;
+            color: var(--text-primary, #0f172a);
+            font-size: 1rem;
+            font-weight: 600;
+          }
+          
+          .preview-info ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+          }
+          
+          .preview-info li {
+            padding: 6px 0;
+            color: var(--text-secondary, #64748b);
+            font-size: 0.875rem;
+            border-bottom: 1px solid var(--border-color, #e2e8f0);
+          }
+          
+          .preview-info li:last-child {
+            border-bottom: none;
+          }
+          
+          .preview-info strong {
+            color: var(--text-primary, #0f172a);
+          }
+          
+          .preview-actions {
+            padding: 20px;
+            border-top: 1px solid var(--border-color, #e2e8f0);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            background: var(--bg-secondary, #f8f9fa);
+          }
+          
+          @media (max-width: 768px) {
+            .preview-container {
+              margin: 10px;
+              max-height: 90vh;
+            }
+            
+            .preview-content {
+              flex-direction: column;
+              padding: 15px;
+            }
+            
+            .preview-info {
+              min-width: auto;
+            }
+          }
+        `;
+        document.head.appendChild(previewStyles);
+      }
+
+      document.body.appendChild(previewModal);
+
+      // Event listeners
+      const closeBtn = previewModal.querySelector('.preview-close');
+      const cancelBtn = previewModal.querySelector('.preview-cancel');
+      const confirmBtn = previewModal.querySelector('.preview-confirm');
+      const overlay = previewModal.querySelector('.preview-overlay');
+
+      function closePreview(confirmed = false) {
+        document.body.removeChild(previewModal);
+        callback(confirmed);
+      }
+
+      closeBtn.addEventListener('click', () => closePreview(false));
+      cancelBtn.addEventListener('click', () => closePreview(false));
+      confirmBtn.addEventListener('click', () => closePreview(true));
+      
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+          closePreview(false);
+        }
+      });
+
+      // Escape key to close
+      const escapeHandler = (e) => {
+        if (e.key === 'Escape') {
+          document.removeEventListener('keydown', escapeHandler);
+          closePreview(false);
+        }
+      };
+      document.addEventListener('keydown', escapeHandler);
+    }
+
+    // Función para cargar imagen con validación de dimensiones
+    function loadImageWithValidation(file, knownDimensions = null) {
+      UIManager.showLoadingState('Validando imagen...');
 
       // Guardar información del archivo
       currentFile = file;
@@ -1667,7 +2168,37 @@
       
       reader.onload = function(e) {
         try {
-          loadImage(e.target.result, file.name);
+          const img = new Image();
+          
+          img.onload = function() {
+            // Validar dimensiones
+            const dimensionValidation = SecurityManager.validateImageDimensions(img);
+            
+            if (!dimensionValidation.isValid) {
+              UIManager.hideLoadingState();
+              dimensionValidation.errors.forEach(error => {
+                UIManager.showError(`${error.message}: ${error.details}`);
+              });
+              return;
+            }
+
+            // Mostrar advertencias sobre dimensiones si existen
+            if (dimensionValidation.warnings && dimensionValidation.warnings.length > 0) {
+              dimensionValidation.warnings.forEach(warning => {
+                console.warn('Advertencia de dimensiones:', warning.message, warning.details);
+              });
+            }
+
+            // Proceder con la carga normal
+            loadImage(e.target.result, file.name);
+          };
+
+          img.onerror = function() {
+            UIManager.hideLoadingState();
+            UIManager.showError('Error al cargar la imagen. El archivo podría estar corrupto.');
+          };
+
+          img.src = e.target.result;
         } catch (error) {
           UIManager.hideLoadingState();
           console.error('Error al procesar la imagen:', error);
@@ -1679,11 +2210,9 @@
         UIManager.hideLoadingState();
         UIManager.showError('Error al leer el archivo. Por favor, inténtalo de nuevo.');
       };
-      
-      reader.readAsDataURL(file);
-    }
 
-    // Enhanced image loading with validation
+      reader.readAsDataURL(file);
+    }    // Enhanced image loading with validation
     function loadImage(src, fileName) {
       const img = new Image();
       

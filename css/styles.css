@@ -3796,7 +3796,8 @@
 
     /* Toast notifications */
     .error-toast,
-    .success-toast {
+    .success-toast,
+    .warning-toast {
       position: fixed;
       top: 20px;
       right: 20px;
@@ -3813,8 +3814,13 @@
       background: linear-gradient(135deg, #28a745, #218838);
     }
 
+    .warning-toast {
+      background: linear-gradient(135deg, var(--warning), var(--warning-hover));
+    }
+
     .error-content,
-    .success-content {
+    .success-content,
+    .warning-content {
       display: flex;
       align-items: center;
       padding: 1rem;
@@ -3824,21 +3830,24 @@
     }
 
     .error-icon,
-    .success-icon {
+    .success-icon,
+    .warning-icon {
       font-size: 1.2rem;
       margin-right: 0.75rem;
       flex-shrink: 0;
     }
 
     .error-message,
-    .success-message {
+    .success-message,
+    .warning-message {
       flex: 1;
       font-size: 0.9rem;
       line-height: 1.4;
     }
 
     .error-close,
-    .success-close {
+    .success-close,
+    .warning-close {
       background: none;
       border: none;
       color: white;
@@ -3856,7 +3865,8 @@
     }
 
     .error-close:hover,
-    .success-close:hover {
+    .success-close:hover,
+    .warning-close:hover {
       background-color: rgba(255, 255, 255, 0.2);
     }
 
