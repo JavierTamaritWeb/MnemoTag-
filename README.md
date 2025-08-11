@@ -1,4 +1,4 @@
-# 🖼️ MnemoTag - ImageMetadataPro
+# 🖼️ MnemoTag
 
 **Editor profesional de metadatos e imágenes con filtros avanzados** - Una aplicación web completa para editar metadatos EXIF, aplicar filtros fotográficos, marcas de agua personalizadas y optimizar imágenes.
 
@@ -299,6 +299,139 @@ FilterManager.presets.custom = {
 1. **Fork** el repositorio
 2. Crea una **rama feature** (`git checkout -b feature/nueva-caracteristica`)
 3. **Commit** tus cambios (`git commit -m 'Agregar nueva característica'`)
+4. **Push** a la rama (`git push origin feature/nueva-caracteristica`)
+5. Abre un **Pull Request**
+
+### **Áreas de Contribución**
+
+- 🐛 **Bug fixes**: Corrección de errores
+- ✨ **Features**: Nuevas características
+- 📚 **Documentación**: Mejoras en docs
+- 🎨 **UI/UX**: Mejoras de interfaz
+- ⚡ **Performance**: Optimizaciones
+
+## 📝 Roadmap
+
+### **v3.0 (Q3 2025)** ✅ COMPLETADO
+
+- [x] ✅ **Sistema de filtros avanzado**: Filtros preestablecidos profesionales
+- [x] ✅ **Controles manuales de filtros**: Brillo, contraste, saturación, desenfoque
+- [x] ✅ **Botón de reseteo premium**: Diseño moderno y consistente
+- [x] ✅ **Vista previa en tiempo real**: Aplicación instantánea de filtros
+- [x] ✅ **Redimensionado inteligente**: Presets y dimensiones personalizadas
+- [x] ✅ **Rotación y volteo**: Herramientas completas de transformación
+
+### **v3.1 (Q4 2025)** 🚧 EN DESARROLLO
+
+- [ ] 🚧 **Filtros AI**: Filtros potenciados por inteligencia artificial
+- [ ] 🚧 **Batch processing**: Procesamiento por lotes
+- [ ] 🚧 **Plantillas de marca**: Marcas de agua predefinidas para empresas
+- [ ] 🚧 **Exportación múltiple**: Varios formatos simultáneamente
+
+## 🛡️ Seguridad y Privacidad
+
+### **🛡️ Características de Seguridad**
+
+- ✅ **Procesamiento local**: Las imágenes nunca se envían a servidores
+- ✅ **Sin subidas**: Todo el procesamiento ocurre en tu navegador
+- ✅ **Código abierto**: Transparencia total en el funcionamiento
+- ✅ **Sin dependencias externas**: Funcionamiento completamente offline
+
+### **🔒 Privacidad**
+
+- ✅ **Sin cookies**: No se almacenan datos personales
+- ✅ **Sin tracking**: No hay seguimiento de usuarios
+- ✅ **Sin analytics**: No se recopilan estadísticas de uso
+- ✅ **GDPR compliant**: Cumple con regulaciones de privacidad
+
+## 🐛 Solución de Problemas
+
+### **❌ "Error al cargar la imagen"**
+
+```text
+Problema: La imagen no se carga correctamente
+Solución:
+1. Verifica que el archivo sea una imagen válida (JPG, PNG, WebP, AVIF)
+2. Comprueba que el tamaño sea menor a 25MB
+3. Intenta con otro formato de imagen
+4. Refresca la página y vuelve a intentar
+```
+
+### **⚡ "La aplicación va lenta"**
+
+```text
+Problema: Rendimiento lento al aplicar filtros
+Solución:
+1. Reduce el tamaño de la imagen antes de aplicar filtros
+2. Cierra otras pestañas del navegador para liberar memoria
+3. Actualiza tu navegador a la última versión
+4. Verifica que tengas suficiente RAM disponible
+```
+
+### **📱 "Problemas en móvil"**
+
+```text
+Problema: La aplicación no funciona bien en dispositivos móviles
+Solución:
+1. Usa la orientación horizontal para mejor experiencia
+2. Asegúrate de tener suficiente espacio de almacenamiento
+3. Cierra otras aplicaciones para liberar memoria
+4. Actualiza tu navegador móvil
+```
+
+## 📊 Estructura del Proyecto
+
+```text
+MnemoTag/
+├── index.html              # Página principal
+├── README.md               # Documentación
+├── css/
+│   └── styles.css         # Estilos principales
+└── js/
+    ├── main.js            # Lógica principal de la aplicación
+    └── image-processor.js # Web Worker para procesamiento
+```
+
+## 👨‍💻 Autor
+
+**Javier Tamarit**
+
+- 🌐 Website: [javierTamarit.com](https://javiertamarit.com)
+- 📧 Email: contacto@javiertamarit.com
+- 💼 LinkedIn: [javier-tamarit](https://linkedin.com/in/javier-tamarit)
+- 🐦 Twitter: [@JavierTamarit](https://twitter.com/JavierTamarit)
+
+## 📄 Licencia
+
+Este proyecto está bajo la Licencia MIT - mira el archivo [LICENSE](LICENSE) para más detalles.
+
+## ⭐ ¿Te gusta el proyecto?
+
+Si MnemoTag te ha sido útil, considera:
+
+- ⭐ **Darle una estrella** a este repositorio
+- 🍴 **Hacer un fork** para contribuir
+- 🐛 **Reportar bugs** para mejorar la aplicación
+- 💡 **Sugerir nuevas características**
+- 📢 **Compartir** con otros desarrolladores
+
+## 🙏 Agradecimientos
+
+- **Font Awesome** por los increíbles iconos
+- **CSS Grid** y **Flexbox** por hacer posible el diseño responsivo
+- **Canvas API** por las capacidades de procesamiento de imágenes
+- **Web Workers** por el procesamiento en segundo plano
+- **La comunidad open source** por la inspiración y feedback
+
+---
+
+<div align="center">
+
+**Hecho con ❤️ en España**
+
+[⬆ Volver al inicio](#-mnemotag)
+
+</div>
 4. **Push** a la rama (`git push origin feature/nueva-caracteristica`)
 5. Abre un **Pull Request**
 
