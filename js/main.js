@@ -281,6 +281,361 @@
       }
     };
 
+    // Sistema de gestión de workers para procesamiento de imágenes
+    const WorkerManager = {
+      workers: new Map(),
+      maxWorkers: navigator.hardwareConcurrency || 4,
+      activeJobs: new Map(),
+      jobIdCounter: 0,
+      
+      // Verificar soporte de workers
+      isSupported: function() {
+        return typeof Worker !== 'undefined' && typeof OffscreenCanvas !== 'undefined';
+      },
+      
+      // Verificar soporte de workers (alias)
+      supportsWorkers: function() {
+        return this.isSupported();
+      },
+      
+      // Verificar soporte de transferable objects
+      supportsTransferableObjects: function() {
+        try {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          const imageData = ctx.createImageData(1, 1);
+          return imageData.data.buffer instanceof ArrayBuffer;
+        } catch (e) {
+          return false;
+        }
+      },
+      
+      // Crear worker pool
+      initializeWorkerPool: function() {
+        if (!this.supportsWorkers()) {
+          console.warn('⚠️ Workers no soportados, usando fallback');
+          return false;
+        }
+        
+        try {
+          for (let i = 0; i < Math.min(2, this.maxWorkers); i++) {
+            const worker = new Worker('workers/image-processor.js');
+            worker.onmessage = this.handleWorkerMessage.bind(this);
+            worker.onerror = this.handleWorkerError.bind(this);
+            this.workers.set(i, {
+              worker: worker,
+              busy: false,
+              lastUsed: Date.now()
+            });
+          }
+          console.log(`🔧 Worker pool inicializado con ${this.workers.size} workers`);
+          return true;
+        } catch (error) {
+          console.error('❌ Error al inicializar workers:', error);
+          return false;
+        }
+      },
+      
+      // Obtener worker disponible
+      getAvailableWorker: function() {
+        for (const [id, workerInfo] of this.workers.entries()) {
+          if (!workerInfo.busy) {
+            workerInfo.busy = true;
+            workerInfo.lastUsed = Date.now();
+            return { id, worker: workerInfo.worker };
+          }
+        }
+        return null;
+      },
+      
+      // Liberar worker
+      releaseWorker: function(workerId) {
+        const workerInfo = this.workers.get(workerId);
+        if (workerInfo) {
+          workerInfo.busy = false;
+          workerInfo.lastUsed = Date.now();
+        }
+      },
+      
+      // Manejar mensajes de workers
+      handleWorkerMessage: function(e) {
+        const { id, result, error } = e.data;
+        const job = this.activeJobs.get(id);
+        
+        if (!job) {
+          console.warn(`⚠️ Job ${id} no encontrado`);
+          return;
+        }
+        
+        // Liberar worker
+        this.releaseWorker(job.workerId);
+        
+        // Resolver/rechazar promesa
+        if (error) {
+          job.reject(new Error(error));
+        } else {
+          job.resolve(result);
+        }
+        
+        // Limpiar job
+        this.activeJobs.delete(id);
+        
+        console.log(`✅ Job ${id} completado`);
+      },
+      
+      // Manejar errores de workers
+      handleWorkerError: function(error) {
+        console.error('❌ Error en worker:', error);
+        
+        // Limpiar jobs activos relacionados
+        for (const [jobId, job] of this.activeJobs.entries()) {
+          if (job.workerId === error.target.workerId) {
+            job.reject(new Error('Worker error: ' + error.message));
+            this.activeJobs.delete(jobId);
+          }
+        }
+      },
+      
+      // Procesar imagen en worker
+      processInWorker: function(imageData, operations) {
+        return new Promise((resolve, reject) => {
+          // Verificar disponibilidad de worker
+          const workerInfo = this.getAvailableWorker();
+          if (!workerInfo) {
+            reject(new Error('No hay workers disponibles'));
+            return;
+          }
+          
+          // Crear job ID único
+          const jobId = ++this.jobIdCounter;
+          
+          // Guardar job
+          this.activeJobs.set(jobId, {
+            resolve,
+            reject,
+            workerId: workerInfo.id,
+            startTime: Date.now()
+          });
+          
+          // Preparar datos para transferencia
+          const transferableData = this.prepareTransferableData(imageData, operations);
+          
+          // Enviar al worker
+          try {
+            workerInfo.worker.postMessage({
+              id: jobId,
+              type: 'process',
+              data: transferableData.data
+            }, transferableData.transferables);
+            
+            console.log(`🚀 Job ${jobId} enviado a worker ${workerInfo.id}`);
+          } catch (error) {
+            // Liberar worker y rechazar
+            this.releaseWorker(workerInfo.id);
+            this.activeJobs.delete(jobId);
+            reject(error);
+          }
+        });
+      },
+      
+      // Preparar datos transferables
+      prepareTransferableData: function(imageData, operations) {
+        const transferables = [];
+        let processedImageData = imageData;
+        
+        // Si soporta transferable objects, preparar ImageData
+        if (this.supportsTransferableObjects() && imageData instanceof ImageData) {
+          // Clonar buffer para transferencia
+          const buffer = imageData.data.buffer.slice();
+          processedImageData = {
+            data: new Uint8ClampedArray(buffer),
+            width: imageData.width,
+            height: imageData.height
+          };
+          transferables.push(buffer);
+        }
+        
+        // Procesar operaciones para transferencia
+        const processedOperations = operations.map(op => {
+          if (op.type === 'watermark-image' && op.config.imageData) {
+            // Manejar datos de imagen de marca de agua
+            const watermarkBuffer = op.config.imageData.data.buffer.slice();
+            transferables.push(watermarkBuffer);
+            return {
+              ...op,
+              config: {
+                ...op.config,
+                imageData: {
+                  data: new Uint8ClampedArray(watermarkBuffer),
+                  width: op.config.imageData.width,
+                  height: op.config.imageData.height
+                }
+              }
+            };
+          }
+          return op;
+        });
+        
+        return {
+          data: {
+            imageData: processedImageData,
+            operations: processedOperations
+          },
+          transferables
+        };
+      },
+      
+      // Terminar todos los workers
+      terminateWorkers: function() {
+        for (const [id, workerInfo] of this.workers.entries()) {
+          workerInfo.worker.terminate();
+        }
+        this.workers.clear();
+        this.activeJobs.clear();
+        console.log('🔌 Todos los workers terminados');
+      },
+      
+      // Obtener estadísticas
+      getStats: function() {
+        const busyWorkers = Array.from(this.workers.values()).filter(w => w.busy).length;
+        return {
+          totalWorkers: this.workers.size,
+          busyWorkers,
+          availableWorkers: this.workers.size - busyWorkers,
+          activeJobs: this.activeJobs.size,
+          supportsWorkers: this.supportsWorkers(),
+          supportsTransferables: this.supportsTransferableObjects()
+        };
+      }
+    };
+
+    // Sistema de fallback para navegadores sin soporte de workers
+    const FallbackProcessor = {
+      // Procesar imagen en el hilo principal (fallback)
+      processInMainThread: function(imageData, operations) {
+        return new Promise((resolve, reject) => {
+          try {
+            console.log('⚠️ Procesando en hilo principal (fallback)');
+            
+            // Crear canvas temporal
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            tempCanvas.width = imageData.width;
+            tempCanvas.height = imageData.height;
+            
+            // Dibujar imagen inicial
+            tempCtx.putImageData(imageData, 0, 0);
+            
+            // Aplicar operaciones secuencialmente
+            for (const operation of operations) {
+              this.applyOperationFallback(tempCtx, operation);
+            }
+            
+            // Obtener resultado
+            const resultImageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+            
+            // Simular async con setTimeout para no bloquear UI
+            setTimeout(() => {
+              resolve(resultImageData);
+            }, 0);
+            
+          } catch (error) {
+            reject(error);
+          }
+        });
+      },
+      
+      // Aplicar operación en fallback
+      applyOperationFallback: function(ctx, operation) {
+        switch (operation.type) {
+          case 'watermark-text':
+            this.applyTextWatermarkFallback(ctx, operation.config);
+            break;
+          case 'watermark-image':
+            this.applyImageWatermarkFallback(ctx, operation.config);
+            break;
+          case 'filter':
+            this.applyFilterFallback(ctx, operation.config);
+            break;
+        }
+      },
+      
+      // Aplicar marca de agua de texto (fallback)
+      applyTextWatermarkFallback: function(ctx, config) {
+        ctx.save();
+        ctx.font = `${config.size}px ${config.font}`;
+        ctx.fillStyle = config.color;
+        ctx.globalAlpha = config.opacity;
+        ctx.fillText(config.text, config.x, config.y);
+        ctx.restore();
+      },
+      
+      // Aplicar marca de agua de imagen (fallback)
+      applyImageWatermarkFallback: function(ctx, config) {
+        if (!config.imageElement) return;
+        
+        ctx.save();
+        ctx.globalAlpha = config.opacity;
+        ctx.drawImage(
+          config.imageElement,
+          config.x,
+          config.y,
+          config.width,
+          config.height
+        );
+        ctx.restore();
+      },
+      
+      // Aplicar filtro (fallback)
+      applyFilterFallback: function(ctx, config) {
+        const canvas = ctx.canvas;
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        
+        switch (config.type) {
+          case 'brightness':
+            this.adjustBrightnessFallback(data, config.value);
+            break;
+          case 'contrast':
+            this.adjustContrastFallback(data, config.value);
+            break;
+          case 'saturation':
+            this.adjustSaturationFallback(data, config.value);
+            break;
+        }
+        
+        ctx.putImageData(imageData, 0, 0);
+      },
+      
+      // Métodos de ajuste de filtros (fallback)
+      adjustBrightnessFallback: function(data, brightness) {
+        for (let i = 0; i < data.length; i += 4) {
+          data[i] = Math.min(255, Math.max(0, data[i] + brightness));
+          data[i + 1] = Math.min(255, Math.max(0, data[i + 1] + brightness));
+          data[i + 2] = Math.min(255, Math.max(0, data[i + 2] + brightness));
+        }
+      },
+      
+      adjustContrastFallback: function(data, contrast) {
+        const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+        for (let i = 0; i < data.length; i += 4) {
+          data[i] = Math.min(255, Math.max(0, factor * (data[i] - 128) + 128));
+          data[i + 1] = Math.min(255, Math.max(0, factor * (data[i + 1] - 128) + 128));
+          data[i + 2] = Math.min(255, Math.max(0, factor * (data[i + 2] - 128) + 128));
+        }
+      },
+      
+      adjustSaturationFallback: function(data, saturation) {
+        for (let i = 0; i < data.length; i += 4) {
+          const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+          data[i] = Math.min(255, Math.max(0, gray + saturation * (data[i] - gray)));
+          data[i + 1] = Math.min(255, Math.max(0, gray + saturation * (data[i + 1] - gray)));
+          data[i + 2] = Math.min(255, Math.max(0, gray + saturation * (data[i + 2] - gray)));
+        }
+      }
+    };
+
     // Sistema de debouncing inteligente mejorado
     const SmartDebounce = {
       timers: new Map(),
@@ -425,6 +780,20 @@
         
         // Rehabilitar controles
         this.enableFilterControls(filterName);
+      },
+      
+      // Mostrar loading específico para worker
+      showWorkerLoading: function() {
+        this.showFilterLoading('worker');
+        
+        // Mostrar indicador específico de worker
+        const indicator = document.getElementById('filter-loading-worker');
+        if (indicator) {
+          const textElement = indicator.querySelector('.filter-loading-text');
+          if (textElement) {
+            textElement.textContent = '🔧 Procesando con Worker...';
+          }
+        }
       },
       
       // Crear indicador de carga
@@ -1778,7 +2147,7 @@
       const filterSliders = ['brightness', 'contrast', 'saturation', 'blur'];
       filterSliders.forEach(filterId => {
         const slider = document.getElementById(filterId);
-        const valueDisplay = document.getElementById(filterId + 'Value');
+        const valueDisplay = document.getElementById(filterId + '-value');
         
         if (slider && valueDisplay) {
           console.log(`✅ Configurando listener para ${filterId}`);
@@ -1795,6 +2164,8 @@
           });
         } else {
           console.warn(`❌ No se encontró elemento para ${filterId}`);
+          console.warn(`    - Slider encontrado: ${!!slider}`);
+          console.warn(`    - ValueDisplay encontrado: ${!!valueDisplay}`);
         }
       });
       
@@ -2653,6 +3024,16 @@
       
       console.log('🔄 Actualizando preview con filtros optimizados');
       
+      // Verificar si necesitamos usar worker para procesamiento pesado
+      if (FilterManager.shouldUseWorker()) {
+        updatePreviewWithWorker();
+      } else {
+        updatePreviewStandard();
+      }
+    }
+    
+    // Actualización estándar del preview (sin worker)
+    function updatePreviewStandard() {
       // Performance optimization: requestAnimationFrame for smooth rendering
       requestAnimationFrame(() => {
         try {
@@ -2685,6 +3066,52 @@
           FilterLoadingManager.hideFilterLoading();
         }
       });
+    }
+    
+    // Actualización del preview usando worker para filtros pesados
+    async function updatePreviewWithWorker() {
+      try {
+        console.log('🔧 Usando Worker para filtros pesados');
+        
+        // Obtener datos de imagen para el worker
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = canvas.width;
+        tempCanvas.height = canvas.height;
+        const tempCtx = tempCanvas.getContext('2d');
+        
+        // Dibujar imagen base
+        tempCtx.drawImage(currentImage, 0, 0, canvas.width, canvas.height);
+        const imageData = tempCtx.getImageData(0, 0, canvas.width, canvas.height);
+        
+        // Procesar con worker
+        const processedImageData = await FilterManager.applyWithWorker(imageData);
+        
+        // Aplicar resultado en el canvas principal
+        requestAnimationFrame(() => {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.putImageData(processedImageData, 0, 0);
+          
+          // Aplicar marcas de agua después del procesamiento
+          applyWatermarkOptimized();
+          
+          // Aplicar filtros CSS restantes (no pesados)
+          applyCanvasFiltersLight();
+          
+          // Save state to history
+          if (typeof debouncedSaveHistory === 'undefined') {
+            window.debouncedSaveHistory = SmartDebounce.intelligent('save-history', () => {
+              historyManager.saveState();
+            }, 1000);
+          }
+          debouncedSaveHistory();
+          
+          console.log('✅ Preview actualizado con Worker exitosamente');
+        });
+        
+      } catch (error) {
+        console.warn('⚠️ Worker falló, usando fallback:', error);
+        updatePreviewStandard();
+      }
     }
 
     function applyWatermarkOptimized() {
@@ -4582,7 +5009,7 @@
       UIManager.showSuccess('Copyright generado automáticamente');
     }
 
-    // Sistema de Filtros Avanzados con Cache y Loading States
+    // Sistema de Filtros Avanzados con Cache, Loading States y Workers
     const FilterManager = {
       filters: {
         brightness: 0,
@@ -4600,6 +5027,36 @@
         vintage: { brightness: -10, contrast: 25, saturation: -30, blur: 0.5, sepia: 30, hueRotate: 0 },
         cold: { brightness: -15, contrast: 30, saturation: -25, blur: 0, sepia: 0, hueRotate: 200 },
         warm: { brightness: 15, contrast: 10, saturation: 20, blur: 0, sepia: 10, hueRotate: -10 }
+      },
+      
+      // Configuración para workers
+      useWorkers: false,
+      heavyFilterThreshold: 3, // Número de filtros para considerar "pesado"
+      
+      // Inicializar sistema de filtros
+      initialize: function() {
+        // Intentar inicializar workers
+        this.useWorkers = WorkerManager.initializeWorkerPool();
+        
+        if (this.useWorkers) {
+          console.log('🔧 FilterManager: Workers habilitados para filtros pesados');
+        } else {
+          console.log('⚠️ FilterManager: Usando procesamiento en hilo principal');
+        }
+      },
+      
+      // Determinar si debe usar worker
+      shouldUseWorker: function() {
+        if (!this.useWorkers) return false;
+        
+        // Contar filtros activos
+        const activeFilters = Object.values(this.filters).filter(value => value !== 0).length;
+        
+        // Usar worker si hay muchos filtros o imagen grande
+        const isHeavyProcessing = activeFilters >= this.heavyFilterThreshold;
+        const isLargeImage = canvas && (canvas.width * canvas.height) > (1920 * 1080);
+        
+        return isHeavyProcessing || isLargeImage;
       },
       
       // Aplicar filtro individual con cache y loading
@@ -4627,11 +5084,15 @@
         
         console.log('📊 Estado actual de filtros:', this.filters);
         
-        // Aplicar con debounce inteligente
-        this.scheduleFilterUpdate();
+        // Aplicar con debounce inteligente o worker
+        if (this.shouldUseWorker()) {
+          this.scheduleWorkerUpdate();
+        } else {
+          this.scheduleFilterUpdate();
+        }
       },
       
-      // Aplicar preset con optimizaciones
+      // Aplicar preset con optimizaciones y workers
       applyPreset: function(presetName) {
         const preset = this.presets[presetName];
         if (!preset) {
@@ -4673,11 +5134,131 @@
         // Resaltar botón activo
         this.highlightActivePreset(presetName);
         
-        // Aplicar inmediatamente para presets (mejor UX)
-        this.applyFiltersImmediate();
+        // Aplicar inmediatamente con workers si es necesario
+        if (this.shouldUseWorker()) {
+          this.applyFiltersWithWorker();
+        } else {
+          this.applyFiltersImmediate();
+        }
       },
       
-      // Programar actualización de filtros con debounce
+      // Programar actualización con worker
+      scheduleWorkerUpdate: function() {
+        SmartDebounce.intelligent('filter-worker-update', () => {
+          this.applyFiltersWithWorker();
+        }, 200); // Más tiempo para workers
+      },
+      
+      // Aplicar filtros usando worker
+      applyFiltersWithWorker: async function() {
+        if (!canvas || !currentImage) {
+          FilterLoadingManager.hideFilterLoading();
+          return;
+        }
+        
+        try {
+          console.log('🔧 Aplicando filtros con worker');
+          
+          // Obtener ImageData actual
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          
+          // Preparar operaciones para worker
+          const operations = this.prepareWorkerOperations();
+          
+          if (operations.length === 0) {
+            console.log('⚡ No hay filtros que aplicar');
+            FilterLoadingManager.hideFilterLoading();
+            return;
+          }
+          
+          // Procesar en worker
+          const result = await WorkerManager.processInWorker(imageData, operations);
+          
+          // Aplicar resultado al canvas
+          if (result instanceof ImageBitmap) {
+            // Si es ImageBitmap, dibujarlo directamente
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(result, 0, 0);
+          } else if (result instanceof ImageData) {
+            // Si es ImageData, aplicarlo
+            ctx.putImageData(result, 0, 0);
+          }
+          
+          // Marcar como aplicado en cache
+          FilterCache.markApplied(this.filters);
+          
+          console.log('✅ Filtros aplicados con worker exitosamente');
+          
+        } catch (error) {
+          console.warn('⚠️ Error en worker, usando fallback:', error);
+          // Fallback al procesamiento normal
+          this.applyFiltersImmediate();
+        } finally {
+          FilterLoadingManager.hideFilterLoading();
+        }
+      },
+      
+      // Aplicar filtros usando fallback
+      applyFiltersWithFallback: async function() {
+        if (!canvas || !currentImage) {
+          FilterLoadingManager.hideFilterLoading();
+          return;
+        }
+        
+        try {
+          console.log('⚠️ Aplicando filtros con fallback');
+          
+          // Obtener ImageData actual
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          
+          // Preparar operaciones para fallback
+          const operations = this.prepareWorkerOperations();
+          
+          if (operations.length === 0) {
+            FilterLoadingManager.hideFilterLoading();
+            return;
+          }
+          
+          // Procesar en hilo principal
+          const result = await FallbackProcessor.processInMainThread(imageData, operations);
+          
+          // Aplicar resultado
+          ctx.putImageData(result, 0, 0);
+          
+          // Marcar como aplicado en cache
+          FilterCache.markApplied(this.filters);
+          
+          console.log('✅ Filtros aplicados con fallback exitosamente');
+          
+        } catch (error) {
+          console.error('❌ Error en fallback:', error);
+          UIManager.showError('Error al aplicar filtros');
+        } finally {
+          FilterLoadingManager.hideFilterLoading();
+        }
+      },
+      
+      // Preparar operaciones para worker/fallback
+      prepareWorkerOperations: function() {
+        const operations = [];
+        
+        // Solo agregar filtros que tienen valores diferentes de 0
+        Object.entries(this.filters).forEach(([filterName, value]) => {
+          if (value !== 0) {
+            operations.push({
+              type: 'filter',
+              config: {
+                type: filterName,
+                value: value
+              }
+            });
+          }
+        });
+        
+        return operations;
+      },
+      
+      // Programar actualización de filtros con debounce (método original)
       scheduleFilterUpdate: function() {
         // Usar debounce inteligente para filtros individuales
         debouncedUpdatePreview();
@@ -4694,6 +5275,40 @@
         
         // Usar immediate update para respuesta rápida
         immediatePreviewUpdate();
+      },
+      
+      // Verificar si se necesita processing pesado
+      shouldUseWorker: function() {
+        if (!WorkerManager.isSupported()) return false;
+        
+        // Detectar filtros computacionalmente pesados
+        const heavyFilters = ['blur', 'contrast', 'saturation'];
+        return heavyFilters.some(filter => {
+          const value = Math.abs(this.filters[filter]);
+          return filter === 'blur' ? value > 3 : value > 150;
+        });
+      },
+      
+      // Aplicar filtros usando worker para operaciones pesadas
+      applyWithWorker: async function(imageData) {
+        const filters = {...this.filters};
+        
+        try {
+          FilterLoadingManager.showWorkerLoading();
+          const result = await WorkerManager.processImage(imageData, filters);
+          FilterLoadingManager.hideFilterLoading();
+          return result;
+        } catch (error) {
+          console.warn('Worker falló, usando fallback:', error);
+          FilterLoadingManager.hideFilterLoading();
+          return FallbackProcessor.processImage(imageData, filters);
+        }
+      },
+      
+      // Aplicar filtros usando fallback processor
+      applyWithFallback: function(imageData) {
+        const filters = {...this.filters};
+        return FallbackProcessor.processImage(imageData, filters);
       },
       
       // Actualizar display de valores con animaciones
@@ -4857,6 +5472,42 @@
           console.error('❌ Error al aplicar filtros:', error);
           FilterLoadingManager.hideFilterLoading();
         }
+      });
+    }
+    
+    // Función para aplicar solo filtros ligeros (después del worker)
+    function applyCanvasFiltersLight() {
+      if (!canvas) return;
+      
+      // Solo aplicar filtros que no son procesados por el worker
+      const lightFilters = {
+        hue: FilterManager.filters.hue,
+        sepia: FilterManager.filters.sepia,
+        grayscale: FilterManager.filters.grayscale,
+        invert: FilterManager.filters.invert
+      };
+      
+      // Generar string de filtros ligeros
+      const filterParts = [];
+      
+      if (lightFilters.hue !== 0) {
+        filterParts.push(`hue-rotate(${lightFilters.hue}deg)`);
+      }
+      if (lightFilters.sepia !== 0) {
+        filterParts.push(`sepia(${lightFilters.sepia}%)`);
+      }
+      if (lightFilters.grayscale !== 0) {
+        filterParts.push(`grayscale(${lightFilters.grayscale}%)`);
+      }
+      if (lightFilters.invert !== 0) {
+        filterParts.push(`invert(${lightFilters.invert}%)`);
+      }
+      
+      const filterString = filterParts.join(' ');
+      
+      requestAnimationFrame(() => {
+        canvas.style.transition = 'filter 0.2s ease';
+        canvas.style.filter = filterString;
       });
     }
     
