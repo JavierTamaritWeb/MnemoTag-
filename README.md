@@ -1,98 +1,107 @@
-# 🖼️ ImageMetadataPro
+# 🖼️ MnemoTag - ImageMetadataPro
 
-**Editor profesional de metadatos e imágenes con marcas de agua** - Una aplicación web completa para editar metadatos EXIF, aplicar marcas de agua personalizadas y optimizar imágenes.
+**Editor profesional de metadatos e imágenes con filtros avanzados** - Una aplicación web completa para editar metadatos EXIF, aplicar filtros fotográficos, marcas de agua personalizadas y optimizar imágenes.
 
-![Version](https://img.shields.io/badge/version-2.2.1-blue.svg)
+![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![JavaScript](https://img.shields.io/badge/javascript-ES6+-yellow.svg)
 ![HTML5](https://img.shields.io/badge/html5-valid-orange.svg)
 ![CSS3](https://img.shields.io/badge/css3-modern-blue.svg)
-![AVIF](https://img.shields.io/badge/AVIF-supported-green.svg)
-![Zoom](https://img.shields.io/badge/zoom-advanced-brightgreen.svg)
+![PWA](https://img.shields.io/badge/PWA-ready-purple.svg)
+![Filters](https://img.shields.io/badge/filters-advanced-brightgreen.svg)
 
 ## ✨ Características Principales
 
+### 🎨 **Sistema de Filtros Avanzado** ⭐ **NUEVO**
+
+- ✅ **Filtros preestablecidos**: Sepia, Vintage, Frío, Cálido, Blanco y Negro
+- ✅ **Controles manuales**: Brillo, Contraste, Saturación, Desenfoque
+- ✅ **Vista previa en tiempo real**: Cambios instantáneos con debouncing optimizado
+- ✅ **Botón de reseteo premium**: Restaura todos los filtros con estilo moderno
+- ✅ **Filtros profesionales**: Algoritmos optimizados para calidad fotográfica
+
 ### 📝 **Gestión de Metadatos**
+
 - ✅ Edición completa de metadatos EXIF
 - ✅ Campos: Título, Autor, Descripción, Palabras clave, Copyright
 - ✅ Validación en tiempo real de datos
 - ✅ Previsualización de metadatos antes de aplicar
 
 ### 🎨 **Marcas de Agua Avanzadas**
+
 - ✅ **Marca de agua de texto**: Fuentes personalizables, colores, tamaños, opacidad
 - ✅ **Marca de agua de imagen**: Soporte para PNG, JPG, WebP
-- ✅ **Posicionamiento inteligente**: 9 posiciones predefinidas + posicionamiento personalizado por clic
+- ✅ **Posicionamiento inteligente**: 9 posiciones predefinidas + posicionamiento personalizado
 - ✅ **Doble marca de agua**: Combina texto e imagen simultáneamente
 
 ### 🔧 **Herramientas de Edición**
 
-- ✅ **Sistema de historial**: Deshacer/Rehacer con 20 estados (Ctrl+Z/Ctrl+Y)
+- ✅ **Redimensionado inteligente**: Mantener proporción automático
+- ✅ **Presets de tamaño**: Full HD, HD, SVGA, Instagram, Facebook, Twitter
+- ✅ **Rotación de imágenes**: 90°, 180°, 270° con vista previa
+- ✅ **Volteo horizontal y vertical**: Transformaciones instantáneas
 - ✅ **Control de calidad**: Ajuste de compresión del 1% al 100%
-- ✅ **Conversión avanzada**: JPEG, PNG, WebP, AVIF con librerías @jsquash optimizadas
-- ✅ **Vista de pantalla completa**: Previsualización inmersiva con botones adaptativos
-- ✅ **Test de conversión**: Verificación automática de formatos soportados
-- ✅ **Optimización automática**: Compresión inteligente sin pérdida de calidad
-- ✅ **Rotación de imágenes**: Rotación 90°, 180°, 270° y restaurar original
+- ✅ **Conversión de formatos**: JPEG, PNG, WebP, AVIF optimizados
 
 ### 🔍 **Navegación y Zoom Avanzado**
 
-- ✅ **Controles de zoom (+/-)**: Botones premium para acercar y alejar (10% - 500%)
+- ✅ **Controles de zoom premium**: Botones estilizados para acercar/alejar (10% - 500%)
 - ✅ **Zoom con rueda del ratón**: Navegación suave con scroll sobre la imagen
-- ✅ **Pan para navegación**: Arrastra para explorar imagen ampliada (mouse y touch)
-- ✅ **Indicador de nivel**: Muestra porcentaje actual de zoom en tiempo real
-- ✅ **Reset de zoom**: Botón y atajo (Ctrl+0) para volver al 100%
-- ✅ **Atajos de teclado**: Ctrl+Plus/Minus para zoom, Ctrl+0 para reset
-- ✅ **Límites inteligentes**: Zoom mínimo 10%, máximo 500% con restricciones de pan
-- ✅ **Soporte móvil**: Gestos touch nativos para zoom y navegación
+- ✅ **Pan para navegación**: Arrastra para explorar imagen ampliada
+- ✅ **Indicador de nivel**: Porcentaje actual de zoom en tiempo real
+- ✅ **Atajos de teclado**: Ctrl+Plus/Minus, Ctrl+0 para reset
+- ✅ **Soporte móvil completo**: Gestos touch nativos
 
-### 🎨 **Interfaz y Experiencia**
+### 💎 **Interfaz Premium**
 
-- ✅ **Modo oscuro/claro**: Cambio automático según preferencias del sistema
-- ✅ **Diseño responsivo**: Optimizado para desktop, tablet y móvil
-- ✅ **Botones premium**: Estilo "Mis botones" con gradientes y efectos hover
-- ✅ **UI completamente en mayúsculas**: Textos, botones e interfaz en mayúsculas
-- ✅ **Botones adaptativos**: Ancho automático según contenido del texto
-- ✅ **Drag & Drop**: Arrastra imágenes directamente a la aplicación
-- ✅ **Accesibilidad**: Cumple estándares WCAG 2.1
+- ✅ **Diseño responsivo premium**: Optimizado para desktop, tablet y móvil
+- ✅ **Botones estilo moderno**: Gradientes, sombras y efectos hover avanzados
+- ✅ **Interfaz consistente**: Tipografía unificada y espaciado perfecto
+- ✅ **Drag & Drop intuitivo**: Arrastra imágenes directamente a la aplicación
+- ✅ **Accesibilidad completa**: Cumple estándares WCAG 2.1
 - ✅ **Animaciones fluidas**: Transiciones suaves y micro-interacciones
-- ✅ **Botón centrado**: Botón "Seleccionar archivo" perfectamente centrado
+- ✅ **Modo pantalla completa**: Vista inmersiva con controles adaptativos
 
 ## 🚀 Demo en Vivo
 
-[**🔗 Prueba ImageMetadataPro aquí**](https://tudominio.com/ImageMetadataPro)
+[**🔗 Prueba MnemoTag aquí**](https://javierTamaritWeb.github.io/MnemoTag)
 
 ## 📸 Capturas de Pantalla
 
-| Interfaz Principal | Modo Oscuro | Editor de Marcas de Agua |
+| Interfaz Principal | Sistema de Filtros | Editor de Marcas de Agua |
 |:--:|:--:|:--:|
-| ![Main Interface](./screenshots/main.png) | ![Dark Mode](./screenshots/dark.png) | ![Watermark Editor](./screenshots/watermark.png) |
+| ![Main Interface](./screenshots/main.png) | ![Filters](./screenshots/filters.png) | ![Watermark Editor](./screenshots/watermark.png) |
 
 ## 🎯 Casos de Uso
 
 ### 👩‍💼 **Profesionales**
-- **Fotógrafos**: Proteger imágenes con marcas de agua personalizadas
-- **Diseñadores**: Optimizar imágenes para web manteniendo calidad
-- **Agencias**: Gestión masiva de metadatos para SEO
+
+- **Fotógrafos**: Aplicar filtros profesionales y proteger imágenes con marcas de agua
+- **Diseñadores**: Optimizar y filtrar imágenes para proyectos creativos
+- **Editores de contenido**: Procesar imágenes con filtros cinematográficos
 
 ### 🏢 **Empresas**
-- **E-commerce**: Optimizar imágenes de productos
-- **Marketing**: Crear contenido visual con marca corporativa
-- **Desarrolladores**: Preparar assets optimizados
+
+- **E-commerce**: Aplicar filtros consistentes a productos
+- **Marketing**: Crear contenido visual con estilo de marca unificado
+- **Agencias**: Gestión masiva de imágenes con filtros corporativos
 
 ### 👨‍🎨 **Creadores**
-- **Artistas digitales**: Firmar obras con marcas de agua elegantes
-- **Bloggers**: Optimizar imágenes para mejor rendimiento web
-- **Redes sociales**: Crear contenido optimizado por plataforma
+
+- **Artistas digitales**: Experimentar con efectos y filtros creativos
+- **Influencers**: Aplicar filtros profesionales a contenido de redes sociales
+- **Bloggers**: Crear imágenes con estilo visual consistente
 
 ## 🔧 Instalación y Uso
 
 ### Método 1: Uso Directo (Recomendado)
+
 ```bash
 # Clona el repositorio
-git clone https://github.com/JavierTamaritWeb/IMAGENMETAMARK.git
+git clone https://github.com/JavierTamaritWeb/MnemoTag.git
 
 # Navega al directorio
-cd IMAGENMETAMARK
+cd MnemoTag
 
 # Abre index.html en tu navegador favorito
 open index.html  # macOS
@@ -101,6 +110,7 @@ xdg-open index.html # Linux
 ```
 
 ### Método 2: Servidor Local
+
 ```bash
 # Con Python
 python -m http.server 8000
@@ -115,29 +125,51 @@ php -S localhost:8000
 ```
 
 ### Método 3: GitHub Pages
+
 1. Fork este repositorio
 2. Ve a Settings > Pages
 3. Selecciona "Deploy from a branch" > main
-4. Tu aplicación estará disponible en: `https://tuusuario.github.io/IMAGENMETAMARK/`
+4. Tu aplicación estará disponible en: `https://tuusuario.github.io/MnemoTag/`
 
 ## 📖 Guía de Uso Rápido
 
 ### 1️⃣ **Cargar Imagen**
-```
+
+```text
 • Arrastra y suelta una imagen en la zona designada
 • O haz clic en "Seleccionar archivo" para elegir desde tu dispositivo
 • Formatos soportados: JPG, PNG, WebP, AVIF (hasta 25MB)
 ```
 
-### 2️⃣ **Editar Metadatos**
+### 2️⃣ **Aplicar Filtros** ⭐ **NUEVO**
+
+```text
+• Filtros preestablecidos:
+  - Original: Sin efectos
+  - Sepia: Efecto vintage cálido
+  - Blanco y Negro: Clásico monocromático
+  - Vintage: Retro con sepia y contraste
+  - Frío: Tonos fríos y azulados
+  - Cálido: Tonos cálidos y dorados
+
+• Controles manuales:
+  - Brillo: -100 a +100
+  - Contraste: -100 a +100
+  - Saturación: -100 a +100
+  - Desenfoque: 0 a 20px
 ```
+
+### 3️⃣ **Editar Metadatos**
+
+```text
 • Completa los campos: Título, Autor, Descripción, Palabras clave, Copyright
 • Los cambios se validan automáticamente
 • Previsualiza los metadatos antes de aplicar
 ```
 
-### 3️⃣ **Aplicar Marcas de Agua**
-```
+### 4️⃣ **Aplicar Marcas de Agua**
+
+```text
 • Marca de agua de texto:
   - Escribe tu texto
   - Selecciona fuente, color y tamaño
@@ -149,7 +181,21 @@ php -S localhost:8000
   - Posiciónala donde prefieras
 ```
 
-### **4️⃣ Optimizar y Descargar**
+### 5️⃣ **Redimensionar y Rotar**
+
+```text
+• Redimensionado inteligente:
+  - Mantener proporción automático
+  - Presets: Full HD, HD, SVGA, redes sociales
+  - Dimensiones personalizadas
+
+• Rotación y volteo:
+  - Rotación: 90°, 180°, 270°
+  - Volteo horizontal/vertical
+  - Restaurar orientación original
+```
+
+### 6️⃣ **Optimizar y Descargar**
 
 ```text
 • Ajusta la calidad de compresión (1-100%)
@@ -163,23 +209,23 @@ php -S localhost:8000
 | Atajo | Acción |
 |-------|--------|
 | `Ctrl + S` | Descargar imagen |
-| `Ctrl + Z` | Deshacer |
-| `Ctrl + Y` | Rehacer |
-| `Ctrl + R` | Resetear cambios |
+| `Ctrl + R` | Resetear filtros |
 | `Ctrl + Plus` | Zoom In (acercar) |
 | `Ctrl + Minus` | Zoom Out (alejar) |
 | `Ctrl + 0` | Reset Zoom (volver al 100%) |
 | `Escape` | Quitar foco del elemento actual |
+| `F11` | Pantalla completa |
 
-## 🔧 Características Técnicas
+## 🔧 Arquitectura Técnica
 
 ### **Tecnologías Utilizadas**
 
 - **Frontend**: HTML5, CSS3, JavaScript ES6+
-- **Frameworks**: TailwindCSS para diseño responsivo
+- **Styling**: CSS moderno con variables y flexbox/grid
 - **Icons**: Font Awesome 6.4.0
 - **APIs**: Canvas API, File System Access API, Fullscreen API
-- **Conversión de imágenes**: @jsquash/avif, @jsquash/png, @jsquash/jpeg, @jsquash/webp
+- **Workers**: Web Workers para procesamiento optimizado
+- **Filtros**: CSS filters + Canvas API para máximo rendimiento
 
 ### **Optimizaciones de Rendimiento**
 
@@ -187,11 +233,12 @@ php -S localhost:8000
 - ✅ **Caching**: Almacena marcas de agua para reutilización
 - ✅ **Lazy Loading**: Carga optimizada de recursos
 - ✅ **RequestAnimationFrame**: Animaciones suaves y eficientes
-- ✅ **Compresión avanzada**: Librerías @jsquash para mejor calidad/tamaño
+- ✅ **Web Workers**: Procesamiento en segundo plano
 - ✅ **Fallback inteligente**: Sistema de respaldo para máxima compatibilidad
 
 ### **Compatibilidad**
-```
+
+```text
 ✅ Chrome 80+     ✅ Firefox 75+     ✅ Safari 13+
 ✅ Edge 80+       ✅ Opera 67+       ✅ iOS Safari 13+
 ✅ Chrome Mobile  ✅ Firefox Mobile  ✅ Samsung Internet
@@ -209,6 +256,7 @@ php -S localhost:8000
 ## 🛠️ Configuración Avanzada
 
 ### **Variables de Entorno**
+
 ```javascript
 // Configurar límites de archivo
 AppConfig.maxFileSize = 25 * 1024 * 1024; // 25MB
@@ -221,7 +269,20 @@ AppConfig.maxCanvasWidth = 800;
 AppConfig.maxCanvasHeight = 600;
 ```
 
+### **Personalización de Filtros**
+
+```javascript
+// Agregar filtros personalizados
+FilterManager.presets.custom = {
+  brightness: -10,
+  contrast: 30,
+  saturation: -20,
+  hueRotate: 180
+};
+```
+
 ### **Personalización de Tema**
+
 ```css
 :root {
   --accent-primary: #3b82f6;    /* Color principal */
@@ -242,6 +303,7 @@ AppConfig.maxCanvasHeight = 600;
 5. Abre un **Pull Request**
 
 ### **Áreas de Contribución**
+
 - 🐛 **Bug fixes**: Corrección de errores
 - ✨ **Features**: Nuevas características
 - 📚 **Documentación**: Mejoras en docs
@@ -250,152 +312,116 @@ AppConfig.maxCanvasHeight = 600;
 
 ## 📝 Roadmap
 
-### **v2.2 (Q3 2025)** ✅ COMPLETADO
+### **v3.0 (Q3 2025)** ✅ COMPLETADO
 
-- [x] ✅ **Conversión AVIF mejorada**: Integración de @jsquash/avif para máxima calidad
-- [x] ✅ **Botones premium "Mis botones"**: Sistema de botones con gradientes y efectos hover
-- [x] ✅ **UI completamente en mayúsculas**: Toda la interfaz en mayúsculas para mejor legibilidad
-- [x] ✅ **Botones adaptativos mejorados**: Padding y dimensiones optimizadas para mejor UX
-- [x] ✅ **Centrado perfecto**: Botón "Seleccionar archivo" perfectamente centrado
-- [x] ✅ **Test de conversión**: Verificación automática de formatos soportados
-- [x] ✅ **Rotación de imágenes**: Herramientas de rotación 90°, 180°, 270° y restaurar original
-- [x] ✅ **Sistema de zoom avanzado**: Controles de zoom (+/-) con indicador en tiempo real
-- [x] ✅ **Zoom con rueda del ratón**: Navegación suave con scroll sobre imagen
-- [x] ✅ **Pan para navegación**: Arrastrar para explorar imagen ampliada (mouse y touch)
-- [x] ✅ **Atajos de zoom**: Ctrl+Plus/Minus para zoom, Ctrl+0 para reset
-- [x] ✅ **Botones de pantalla completa y descarga optimizados**: Dimensiones perfectas para contenido
+- [x] ✅ **Sistema de filtros avanzado**: Filtros preestablecidos profesionales
+- [x] ✅ **Controles manuales de filtros**: Brillo, contraste, saturación, desenfoque
+- [x] ✅ **Botón de reseteo premium**: Diseño moderno y consistente
+- [x] ✅ **Vista previa en tiempo real**: Aplicación instantánea de filtros
+- [x] ✅ **Redimensionado inteligente**: Presets y dimensiones personalizadas
+- [x] ✅ **Rotación y volteo**: Herramientas completas de transformación
 
-### **v2.3 (Q4 2025)**
+### **v3.1 (Q4 2025)** 🚧 EN DESARROLLO
 
-- [ ] Editor de filtros avanzados (blur, sepia, saturación, contraste)
-- [ ] Soporte para archivos RAW (CR2, NEF, ARW)
-- [ ] Procesamiento en lotes (múltiples imágenes)
-- [ ] Herramientas de recorte avanzado
-- [ ] Efectos de desenfoque selectivo
+- [ ] 🚧 **Filtros AI**: Filtros potenciados por inteligencia artificial
+- [ ] 🚧 **Batch processing**: Procesamiento por lotes
+- [ ] 🚧 **Plantillas de marca**: Marcas de agua predefinidas para empresas
+- [ ] 🚧 **Exportación múltiple**: Varios formatos simultáneamente
 
-### **v3.0 (2026)**
-
-- [ ] Plugin para WordPress
-- [ ] API REST para integración
-- [ ] Editor avanzado de metadatos GPS
-- [ ] Soporte para videos (marcas de agua)
-- [ ] Inteligencia artificial para optimización automática
-- [ ] Editor colaborativo en tiempo real
-- [ ] Aplicación móvil nativa
-- [ ] Versión de escritorio (Electron)
-
-## 📊 Estadísticas del Proyecto
-
-```text
-📦 Tamaño total: ~102KB (minificado, incluye @jsquash, "Mis botones" y sistema de zoom)
-⚡ Tiempo de carga: <2 segundos
-🔧 Dependencias externas: @jsquash libraries (CDN)
-🎯 Compatibilidad: 95%+ navegadores modernos
-📱 Responsive: 100% compatible móvil/desktop
-♿ Accesibilidad: WCAG 2.1 AA
-🖼️ Formatos soportados: JPEG, PNG, WebP, AVIF
-⚙️ Conversión avanzada: Librerías optimizadas @jsquash
-🎨 Sistema de botones: Premium "Mis botones" con gradientes
-📄 UI: Completamente en mayúsculas para mejor legibilidad
-🔄 Herramientas: Rotación, pantalla completa, historial
-🔍 Sistema de zoom: Completo con pan, rueda del ratón y atajos
-```
-
-## 🔐 Seguridad y Privacidad
+## 🛡️ Seguridad y Privacidad
 
 ### **🛡️ Características de Seguridad**
+
 - ✅ **Procesamiento local**: Las imágenes nunca se envían a servidores
-- ✅ **Validación estricta**: Verificación de tipos de archivo y contenido
-- ✅ **Sanitización**: Limpieza automática de inputs maliciosos
-- ✅ **CSP Headers**: Content Security Policy implementado
-- ✅ **XSS Protection**: Protección contra inyección de scripts
+- ✅ **Sin subidas**: Todo el procesamiento ocurre en tu navegador
+- ✅ **Código abierto**: Transparencia total en el funcionamiento
+- ✅ **Sin dependencias externas**: Funcionamiento completamente offline
 
 ### **🔒 Privacidad**
+
 - ✅ **Sin cookies**: No se almacenan datos personales
 - ✅ **Sin tracking**: No hay seguimiento de usuarios
-- ✅ **GDPR compliant**: Cumple con regulaciones europeas
-- ✅ **Código abierto**: Auditable y transparente
+- ✅ **Sin analytics**: No se recopilan estadísticas de uso
+- ✅ **GDPR compliant**: Cumple con regulaciones de privacidad
 
-## 🚨 Solución de Problemas
+## 🐛 Solución de Problemas
 
-### **Problemas Comunes**
-
-#### **❌ "Error al cargar la imagen"**
-```
-• Verifica que el archivo sea una imagen válida
-• Comprueba que el tamaño no exceda 25MB
-• Intenta con un formato diferente (JPG, PNG)
-```
-
-### **⚠️ "Formato no soportado"**
+### **❌ "Error al cargar la imagen"**
 
 ```text
-• Algunos navegadores no soportan WebP/AVIF completamente
-• Usa "Test conversión" para verificar compatibilidad en tu navegador
-• Usa Chrome/Firefox actualizados para mejor soporte
-• Convierte a JPEG/PNG como alternativa universal
+Problema: La imagen no se carga correctamente
+Solución:
+1. Verifica que el archivo sea una imagen válida (JPG, PNG, WebP, AVIF)
+2. Comprueba que el tamaño sea menor a 25MB
+3. Intenta con otro formato de imagen
+4. Refresca la página y vuelve a intentar
 ```
 
-#### **🐌 "Rendimiento lento"**
+### **⚡ "La aplicación va lenta"**
 
 ```text
-• Reduce el tamaño de la imagen original
-• Usa el botón "Test conversión" para comprobar rendimiento
-• Cierra otras pestañas del navegador
-• Usa Chrome para mejor rendimiento de Canvas
+Problema: Rendimiento lento al aplicar filtros
+Solución:
+1. Reduce el tamaño de la imagen antes de aplicar filtros
+2. Cierra otras pestañas del navegador para liberar memoria
+3. Actualiza tu navegador a la última versión
+4. Verifica que tengas suficiente RAM disponible
 ```
 
-#### **📱 "Problemas en móvil"**
+### **📱 "Problemas en móvil"**
+
+```text
+Problema: La aplicación no funciona bien en dispositivos móviles
+Solución:
+1. Usa la orientación horizontal para mejor experiencia
+2. Asegúrate de tener suficiente espacio de almacenamiento
+3. Cierra otras aplicaciones para liberar memoria
+4. Actualiza tu navegador móvil
 ```
-• Usa orientación horizontal para mejor experiencia
-• Asegúrate de tener suficiente RAM disponible
-• Actualiza tu navegador móvil
-```
 
-## 📄 Licencia
+## 📊 Estructura del Proyecto
 
-Este proyecto está bajo la **Licencia MIT** - consulta el archivo [LICENSE](LICENSE) para más detalles.
-
-```
-MIT License
-
-Copyright (c) 2025 Javier Tamarit
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+```text
+MnemoTag/
+├── index.html              # Página principal
+├── README.md               # Documentación
+├── css/
+│   └── styles.css         # Estilos principales
+└── js/
+    ├── main.js            # Lógica principal de la aplicación
+    └── image-processor.js # Web Worker para procesamiento
 ```
 
 ## 👨‍💻 Autor
 
 **Javier Tamarit**
+
 - 🌐 Website: [javierTamarit.com](https://javiertamarit.com)
-- 💼 LinkedIn: [/in/javiertamarit](https://linkedin.com/in/javiertamarit)
+- 📧 Email: contacto@javiertamarit.com
+- 💼 LinkedIn: [javier-tamarit](https://linkedin.com/in/javier-tamarit)
 - 🐦 Twitter: [@JavierTamarit](https://twitter.com/JavierTamarit)
-- 📧 Email: [contacto@javiertamarit.com](mailto:contacto@javiertamarit.com)
 
-## 🙏 Agradecimientos
+## 📄 Licencia
 
-- **TailwindCSS** - Framework CSS increíble
-- **Font Awesome** - Iconos hermosos y consistentes  
-- **MDN Web Docs** - Documentación excepcional
-- **Comunidad Open Source** - Por el feedback y contribuciones
+Este proyecto está bajo la Licencia MIT - mira el archivo [LICENSE](LICENSE) para más detalles.
 
 ## ⭐ ¿Te gusta el proyecto?
 
-Si ImageMetadataPro te ha sido útil:
+Si MnemoTag te ha sido útil, considera:
 
-1. ⭐ **Dale una estrella** a este repositorio
-2. 🐦 **Compártelo** en redes sociales
-3. 🐛 **Reporta bugs** para mejorar la aplicación
-4. 💡 **Sugiere features** para futuras versiones
-5. 🤝 **Contribuye** con código o documentación
+- ⭐ **Darle una estrella** a este repositorio
+- 🍴 **Hacer un fork** para contribuir
+- 🐛 **Reportar bugs** para mejorar la aplicación
+- 💡 **Sugerir nuevas características**
+- 📢 **Compartir** con otros desarrolladores
+
+## 🙏 Agradecimientos
+
+- **Font Awesome** por los increíbles iconos
+- **CSS Grid** y **Flexbox** por hacer posible el diseño responsivo
+- **Canvas API** por las capacidades de procesamiento de imágenes
+- **Web Workers** por el procesamiento en segundo plano
+- **La comunidad open source** por la inspiración y feedback
 
 ---
 
@@ -403,7 +429,6 @@ Si ImageMetadataPro te ha sido útil:
 
 **Hecho con ❤️ en España**
 
-[⬆ Volver al inicio](#-imagemetadatapro)
+[⬆ Volver al inicio](#-mnemotag---imagemetadatapro)
 
 </div>
-# MnemoTag-
