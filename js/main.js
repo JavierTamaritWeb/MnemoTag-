@@ -281,7 +281,254 @@
       }
     };
 
-    // Debounce function para optimizar eventos
+    // Sistema de debouncing inteligente mejorado
+    const SmartDebounce = {
+      timers: new Map(),
+      animationFrames: new Map(),
+      
+      // Debounce inteligente con 150ms optimizado
+      intelligent: function(key, func, delay = 150) {
+        return (...args) => {
+          // Cancelar timer anterior si existe
+          if (this.timers.has(key)) {
+            clearTimeout(this.timers.get(key));
+          }
+          
+          // Cancelar animation frame anterior si existe
+          if (this.animationFrames.has(key)) {
+            cancelAnimationFrame(this.animationFrames.get(key));
+            this.animationFrames.delete(key);
+          }
+          
+          // Crear nuevo timer
+          const timer = setTimeout(() => {
+            // Ejecutar en el próximo animation frame para mejor performance
+            const frameId = requestAnimationFrame(() => {
+              func.apply(this, args);
+              this.animationFrames.delete(key);
+            });
+            this.animationFrames.set(key, frameId);
+            this.timers.delete(key);
+          }, delay);
+          
+          this.timers.set(key, timer);
+        };
+      },
+      
+      // Debounce inmediato para casos críticos
+      immediate: function(key, func, delay = 50) {
+        return (...args) => {
+          if (this.animationFrames.has(key)) {
+            cancelAnimationFrame(this.animationFrames.get(key));
+          }
+          
+          const frameId = requestAnimationFrame(() => {
+            func.apply(this, args);
+            this.animationFrames.delete(key);
+          });
+          this.animationFrames.set(key, frameId);
+        };
+      },
+      
+      // Limpiar todos los timers y frames
+      clear: function() {
+        this.timers.forEach(timer => clearTimeout(timer));
+        this.animationFrames.forEach(frameId => cancelAnimationFrame(frameId));
+        this.timers.clear();
+        this.animationFrames.clear();
+      }
+    };
+
+    // Cache de estados de filtros para optimización
+    const FilterCache = {
+      states: new Map(),
+      lastApplied: null,
+      isDirty: false,
+      
+      // Guardar estado actual
+      saveState: function(key, filterState) {
+        const stateHash = this.generateHash(filterState);
+        this.states.set(key, {
+          filters: { ...filterState },
+          hash: stateHash,
+          timestamp: Date.now()
+        });
+        return stateHash;
+      },
+      
+      // Obtener estado guardado
+      getState: function(key) {
+        return this.states.get(key);
+      },
+      
+      // Verificar si el estado ha cambiado
+      hasChanged: function(currentState) {
+        const currentHash = this.generateHash(currentState);
+        return this.lastApplied !== currentHash;
+      },
+      
+      // Marcar estado como aplicado
+      markApplied: function(filterState) {
+        this.lastApplied = this.generateHash(filterState);
+        this.isDirty = false;
+      },
+      
+      // Generar hash único para estado de filtros
+      generateHash: function(filterState) {
+        return JSON.stringify(filterState);
+      },
+      
+      // Limpiar cache antiguo (más de 5 minutos)
+      cleanup: function() {
+        const now = Date.now();
+        const maxAge = 5 * 60 * 1000; // 5 minutos
+        
+        for (const [key, state] of this.states.entries()) {
+          if (now - state.timestamp > maxAge) {
+            this.states.delete(key);
+          }
+        }
+      },
+      
+      // Marcar como sucio (necesita actualización)
+      markDirty: function() {
+        this.isDirty = true;
+      }
+    };
+
+    // Sistema de loading states para filtros
+    const FilterLoadingManager = {
+      activeLoadings: new Set(),
+      
+      // Mostrar loading state específico para filtros
+      showFilterLoading: function(filterName = null) {
+        const key = filterName || 'global';
+        this.activeLoadings.add(key);
+        
+        // Mostrar indicador visual
+        const indicator = this.createLoadingIndicator(key);
+        if (indicator) {
+          this.showIndicator(indicator, filterName);
+        }
+        
+        // Deshabilitar controles temporalmente
+        this.disableFilterControls(filterName);
+      },
+      
+      // Ocultar loading state
+      hideFilterLoading: function(filterName = null) {
+        const key = filterName || 'global';
+        this.activeLoadings.delete(key);
+        
+        // Ocultar indicador
+        this.hideIndicator(key);
+        
+        // Rehabilitar controles
+        this.enableFilterControls(filterName);
+      },
+      
+      // Crear indicador de carga
+      createLoadingIndicator: function(key) {
+        const existingIndicator = document.getElementById(`filter-loading-${key}`);
+        if (existingIndicator) return existingIndicator;
+        
+        const indicator = document.createElement('div');
+        indicator.id = `filter-loading-${key}`;
+        indicator.className = 'filter-loading-indicator';
+        indicator.innerHTML = `
+          <div class="filter-spinner"></div>
+          <span class="filter-loading-text">Aplicando filtros...</span>
+        `;
+        
+        return indicator;
+      },
+      
+      // Mostrar indicador
+      showIndicator: function(indicator, filterName) {
+        if (filterName) {
+          // Mostrar junto al control específico
+          const control = document.getElementById(filterName);
+          if (control && control.parentNode) {
+            control.parentNode.appendChild(indicator);
+          }
+        } else {
+          // Mostrar globalmente
+          const container = document.querySelector('.filter-controls') || document.querySelector('.filters-section');
+          if (container) {
+            container.appendChild(indicator);
+          }
+        }
+        
+        // Animar entrada
+        indicator.style.opacity = '0';
+        indicator.style.transform = 'scale(0.8)';
+        requestAnimationFrame(() => {
+          indicator.style.transition = 'all 0.2s ease';
+          indicator.style.opacity = '1';
+          indicator.style.transform = 'scale(1)';
+        });
+      },
+      
+      // Ocultar indicador
+      hideIndicator: function(key) {
+        const indicator = document.getElementById(`filter-loading-${key}`);
+        if (indicator) {
+          indicator.style.transition = 'all 0.2s ease';
+          indicator.style.opacity = '0';
+          indicator.style.transform = 'scale(0.8)';
+          
+          setTimeout(() => {
+            if (indicator.parentNode) {
+              indicator.parentNode.removeChild(indicator);
+            }
+          }, 200);
+        }
+      },
+      
+      // Deshabilitar controles
+      disableFilterControls: function(filterName) {
+        if (filterName) {
+          const control = document.getElementById(filterName);
+          if (control) {
+            control.disabled = true;
+            control.style.opacity = '0.6';
+          }
+        } else {
+          // Deshabilitar todos los controles
+          const allControls = document.querySelectorAll('.filter-controls input, .filter-controls button');
+          allControls.forEach(control => {
+            control.disabled = true;
+            control.style.opacity = '0.6';
+          });
+        }
+      },
+      
+      // Habilitar controles
+      enableFilterControls: function(filterName) {
+        if (filterName) {
+          const control = document.getElementById(filterName);
+          if (control) {
+            control.disabled = false;
+            control.style.opacity = '1';
+          }
+        } else {
+          // Habilitar todos los controles
+          const allControls = document.querySelectorAll('.filter-controls input, .filter-controls button');
+          allControls.forEach(control => {
+            control.disabled = false;
+            control.style.opacity = '1';
+          });
+        }
+      },
+      
+      // Verificar si hay loading activo
+      isLoading: function(filterName = null) {
+        const key = filterName || 'global';
+        return this.activeLoadings.has(key);
+      }
+    };
+
+    // Debounce function para optimizar eventos (versión básica mantenida para compatibilidad)
     function debounce(func, wait) {
       let timeout;
       return function executedFunction(...args) {
@@ -308,8 +555,9 @@
       };
     }
 
-    // Optimized preview update with debouncing
-    const debouncedUpdatePreview = debounce(updatePreview, 100);
+    // Optimized preview update with intelligent debouncing
+    const debouncedUpdatePreview = SmartDebounce.intelligent('preview-update', updatePreview, 150);
+    const immediatePreviewUpdate = SmartDebounce.immediate('preview-immediate', updatePreview, 50);
 
     // Utility functions
     const utils = {
@@ -2397,31 +2645,45 @@
     }
 
     function updatePreview() {
-      if (!currentImage || !ctx) return;
+      if (!currentImage || !ctx) {
+        console.log('⚠️ updatePreview: Sin imagen o contexto disponible');
+        FilterLoadingManager.hideFilterLoading();
+        return;
+      }
+      
+      console.log('🔄 Actualizando preview con filtros optimizados');
       
       // Performance optimization: requestAnimationFrame for smooth rendering
       requestAnimationFrame(() => {
-        // Clear canvas with optimized method
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        // Draw image with better quality
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
-        ctx.drawImage(currentImage, 0, 0, canvas.width, canvas.height);
-        
-        // Apply watermark with caching
-        applyWatermarkOptimized();
-        
-        // Aplicar filtros CSS al canvas
-        applyCanvasFilters();
-        
-        // Save state to history (debounced)
-        if (typeof debouncedSaveHistory === 'undefined') {
-          window.debouncedSaveHistory = UIManager.debounce(() => {
-            historyManager.saveState();
-          }, 1000);
+        try {
+          // Clear canvas with optimized method
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          
+          // Draw image with better quality
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(currentImage, 0, 0, canvas.width, canvas.height);
+          
+          // Apply watermark with caching
+          applyWatermarkOptimized();
+          
+          // Aplicar filtros CSS al canvas (con cache y loading states)
+          applyCanvasFilters();
+          
+          // Save state to history (debounced)
+          if (typeof debouncedSaveHistory === 'undefined') {
+            window.debouncedSaveHistory = SmartDebounce.intelligent('save-history', () => {
+              historyManager.saveState();
+            }, 1000);
+          }
+          debouncedSaveHistory();
+          
+          console.log('✅ Preview actualizado exitosamente');
+          
+        } catch (error) {
+          console.error('❌ Error al actualizar preview:', error);
+          FilterLoadingManager.hideFilterLoading();
         }
-        debouncedSaveHistory();
       });
     }
 
@@ -4320,7 +4582,7 @@
       UIManager.showSuccess('Copyright generado automáticamente');
     }
 
-    // Sistema de Filtros Avanzados  
+    // Sistema de Filtros Avanzados con Cache y Loading States
     const FilterManager = {
       filters: {
         brightness: 0,
@@ -4340,17 +4602,57 @@
         warm: { brightness: 15, contrast: 10, saturation: 20, blur: 0, sepia: 10, hueRotate: -10 }
       },
       
+      // Aplicar filtro individual con cache y loading
       applyFilter: function(filterName, value) {
-        console.log(`Aplicando filtro ${filterName}: ${value}`);
+        console.log(`🎨 Aplicando filtro ${filterName}: ${value}`);
+        
+        // Verificar si el valor realmente cambió
+        if (this.filters[filterName] === value) {
+          console.log(`⚡ Filtro ${filterName} ya tiene el valor ${value}, omitiendo actualización`);
+          return;
+        }
+        
+        // Mostrar loading state para este filtro específico
+        FilterLoadingManager.showFilterLoading(filterName);
+        
+        // Actualizar valor
         this.filters[filterName] = value;
         this.updateFilterDisplay(filterName, value);
-        console.log('Estado actual de filtros:', this.filters);
-        debouncedUpdatePreview();
+        
+        // Marcar cache como sucio
+        FilterCache.markDirty();
+        
+        // Guardar estado en cache
+        FilterCache.saveState(`filter-${filterName}`, this.filters);
+        
+        console.log('📊 Estado actual de filtros:', this.filters);
+        
+        // Aplicar con debounce inteligente
+        this.scheduleFilterUpdate();
       },
       
+      // Aplicar preset con optimizaciones
       applyPreset: function(presetName) {
         const preset = this.presets[presetName];
-        if (!preset) return;
+        if (!preset) {
+          console.warn(`❌ Preset "${presetName}" no encontrado`);
+          return;
+        }
+        
+        console.log(`🎭 Aplicando preset: ${presetName}`);
+        
+        // Verificar si ya está aplicado usando cache
+        const currentHash = FilterCache.generateHash(this.filters);
+        const presetHash = FilterCache.generateHash(preset);
+        
+        if (currentHash === presetHash) {
+          console.log(`⚡ Preset ${presetName} ya está aplicado, omitiendo actualización`);
+          this.highlightActivePreset(presetName);
+          return;
+        }
+        
+        // Mostrar loading global
+        FilterLoadingManager.showFilterLoading();
         
         // Aplicar todos los valores del preset
         Object.keys(preset).forEach(filter => {
@@ -4364,32 +4666,83 @@
           }
         });
         
+        // Guardar en cache
+        FilterCache.saveState(`preset-${presetName}`, this.filters);
+        FilterCache.markDirty();
+        
         // Resaltar botón activo
         this.highlightActivePreset(presetName);
+        
+        // Aplicar inmediatamente para presets (mejor UX)
+        this.applyFiltersImmediate();
+      },
+      
+      // Programar actualización de filtros con debounce
+      scheduleFilterUpdate: function() {
+        // Usar debounce inteligente para filtros individuales
         debouncedUpdatePreview();
       },
       
+      // Aplicar filtros inmediatamente (para presets)
+      applyFiltersImmediate: function() {
+        // Verificar si realmente necesita actualización usando cache
+        if (!FilterCache.hasChanged(this.filters)) {
+          console.log('⚡ Estado de filtros no ha cambiado, omitiendo actualización');
+          FilterLoadingManager.hideFilterLoading();
+          return;
+        }
+        
+        // Usar immediate update para respuesta rápida
+        immediatePreviewUpdate();
+      },
+      
+      // Actualizar display de valores con animaciones
       updateFilterDisplay: function(filterName, value) {
         const display = document.getElementById(`${filterName}-value`);
         if (display) {
-          display.textContent = filterName === 'blur' ? `${value}px` : value;
+          const formattedValue = filterName === 'blur' ? `${value}px` : value;
+          
+          // Animar cambio de valor
+          display.style.transition = 'all 0.2s ease';
+          display.style.transform = 'scale(1.1)';
+          display.textContent = formattedValue;
+          
+          setTimeout(() => {
+            display.style.transform = 'scale(1)';
+          }, 150);
         }
       },
       
+      // Resaltar preset activo con animaciones
       highlightActivePreset: function(activePreset) {
         const presetButtons = document.querySelectorAll('.filter-preset');
         presetButtons.forEach(btn => {
           btn.classList.remove('btn-primary');
           btn.classList.add('btn-outline');
+          btn.style.transform = 'scale(1)';
           
           if (btn.dataset.filter === activePreset) {
             btn.classList.remove('btn-outline');
             btn.classList.add('btn-primary');
+            
+            // Animación de activación
+            btn.style.transition = 'all 0.2s ease';
+            btn.style.transform = 'scale(1.05)';
+            setTimeout(() => {
+              btn.style.transform = 'scale(1)';
+            }, 200);
           }
         });
       },
       
+      // Reset con cache clearing
       reset: function() {
+        console.log('🔄 Reseteando filtros');
+        
+        // Mostrar loading
+        FilterLoadingManager.showFilterLoading();
+        
+        // Reset valores
         Object.keys(this.filters).forEach(filter => {
           this.filters[filter] = 0;
           this.updateFilterDisplay(filter, 0);
@@ -4400,15 +4753,26 @@
           }
         });
         
+        // Limpiar cache
+        FilterCache.cleanup();
+        FilterCache.markDirty();
+        
+        // Guardar estado reset
+        FilterCache.saveState('reset', this.filters);
+        
         this.highlightActivePreset('none');
-        debouncedUpdatePreview();
+        
+        // Aplicar inmediatamente
+        this.applyFiltersImmediate();
       },
       
+      // Generar string de filtros CSS optimizado
       getFilterString: function() {
         const { brightness, contrast, saturation, blur, sepia, hueRotate } = this.filters;
         
         let filterStr = '';
         
+        // Solo agregar filtros que tienen valores diferentes de 0
         if (brightness !== 0) {
           filterStr += `brightness(${(100 + brightness) / 100}) `;
         }
@@ -4433,8 +4797,23 @@
           filterStr += `blur(${blur}px) `;
         }
         
-        console.log('🎨 Filtro CSS generado:', filterStr.trim());
-        return filterStr.trim();
+        const finalFilter = filterStr.trim();
+        console.log('🎨 Filtro CSS generado:', finalFilter || 'none');
+        
+        // Marcar como aplicado en cache
+        FilterCache.markApplied(this.filters);
+        
+        return finalFilter;
+      },
+      
+      // Obtener rendimiento de filtros
+      getPerformanceMetrics: function() {
+        return {
+          cacheSize: FilterCache.states.size,
+          isDirty: FilterCache.isDirty,
+          lastApplied: FilterCache.lastApplied,
+          activeLoadings: FilterLoadingManager.activeLoadings.size
+        };
       }
     };
 
@@ -4444,16 +4823,41 @@
       UIManager.showSuccess('Filtros reseteados');
     }
 
-    // Función para aplicar filtros al canvas
+    // Función para aplicar filtros al canvas con optimizaciones
     function applyCanvasFilters() {
       if (!canvas) {
         console.log('No hay canvas disponible para aplicar filtros');
+        FilterLoadingManager.hideFilterLoading();
         return;
       }
       
-      const filterString = FilterManager.getFilterString();
-      console.log('Aplicando filtros CSS al canvas:', filterString);
-      canvas.style.filter = filterString;
+      // Verificar si necesita actualización usando cache
+      if (!FilterCache.hasChanged(FilterManager.filters)) {
+        console.log('⚡ Filtros no han cambiado, omitiendo aplicación al canvas');
+        FilterLoadingManager.hideFilterLoading();
+        return;
+      }
+      
+      // Usar requestAnimationFrame para mejor performance
+      requestAnimationFrame(() => {
+        try {
+          const filterString = FilterManager.getFilterString();
+          console.log('🎨 Aplicando filtros CSS al canvas:', filterString || 'none');
+          
+          // Aplicar filtros con transición suave
+          canvas.style.transition = 'filter 0.2s ease';
+          canvas.style.filter = filterString;
+          
+          // Ocultar loading states después de aplicar
+          setTimeout(() => {
+            FilterLoadingManager.hideFilterLoading();
+          }, 200);
+          
+        } catch (error) {
+          console.error('❌ Error al aplicar filtros:', error);
+          FilterLoadingManager.hideFilterLoading();
+        }
+      });
     }
     
     // ===== ZOOM FUNCTIONALITY =====
@@ -5008,3 +5412,34 @@
         }
       }, 250);
     });
+
+    // ===== FILTER OPTIMIZATION & CLEANUP =====
+    
+    // Limpieza automática de cache cada 5 minutos
+    setInterval(() => {
+      FilterCache.cleanup();
+      console.log('🧹 Limpieza automática de cache de filtros ejecutada');
+    }, 5 * 60 * 1000);
+    
+    // Cleanup al cerrar/recargar página
+    window.addEventListener('beforeunload', () => {
+      SmartDebounce.clear();
+      FilterLoadingManager.activeLoadings.clear();
+      console.log('🧹 Cleanup de debounce y loading states completado');
+    });
+    
+    // Función para mostrar métricas de rendimiento (desarrollo)
+    window.getFilterPerformanceMetrics = function() {
+      const metrics = FilterManager.getPerformanceMetrics();
+      console.table({
+        'Cache Size': metrics.cacheSize,
+        'Cache Dirty': metrics.isDirty,
+        'Active Loadings': metrics.activeLoadings,
+        'Smart Debounce Timers': SmartDebounce.timers.size,
+        'Animation Frames': SmartDebounce.animationFrames.size
+      });
+      return metrics;
+    };
+    
+    console.log('🎨 Sistema de filtros optimizado inicializado');
+    console.log('💡 Usa getFilterPerformanceMetrics() para ver métricas de rendimiento');

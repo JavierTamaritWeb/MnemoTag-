@@ -3899,6 +3899,130 @@
       z-index: 1;
     }
 
+    /* Filter Loading Indicators */
+    .filter-loading-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+      color: var(--text-inverse);
+      border-radius: var(--radius);
+      font-size: 0.75rem;
+      font-weight: 500;
+      position: absolute;
+      top: 50%;
+      right: -120px;
+      transform: translateY(-50%);
+      z-index: 100;
+      box-shadow: var(--shadow-lg);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .filter-spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top: 2px solid white;
+      border-radius: 50%;
+      animation: filterSpin 0.8s linear infinite;
+    }
+
+    .filter-loading-text {
+      white-space: nowrap;
+      font-size: 0.75rem;
+    }
+
+    @keyframes filterSpin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Filter controls optimizations */
+    .filter-controls input[type="range"] {
+      transition: all 0.2s ease;
+    }
+
+    .filter-controls input[type="range"]:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .filter-controls button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    /* Global filter loading indicator */
+    .filter-loading-indicator[id="filter-loading-global"] {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      right: auto;
+      padding: 0.75rem 1.25rem;
+      font-size: 0.875rem;
+      border-radius: var(--radius-lg);
+      animation: slideDownFilter 0.3s ease-out;
+    }
+
+    @keyframes slideDownFilter {
+      from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+    }
+
+    /* Filter section enhancements */
+    .filters-section {
+      position: relative;
+    }
+
+    .filter-preset.btn-primary {
+      animation: presetActivated 0.3s ease-out;
+    }
+
+    @keyframes presetActivated {
+      0% {
+        transform: scale(1);
+        box-shadow: var(--shadow);
+      }
+      50% {
+        transform: scale(1.05);
+        box-shadow: var(--shadow-lg);
+      }
+      100% {
+        transform: scale(1);
+        box-shadow: var(--shadow-lg);
+      }
+    }
+
+    /* Responsive filter loading indicators */
+    @media (max-width: 768px) {
+      .filter-loading-indicator {
+        position: static;
+        transform: none;
+        margin: 0.5rem 0;
+        right: auto;
+      }
+      
+      .filter-loading-indicator[id="filter-loading-global"] {
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        transform: none;
+        font-size: 0.75rem;
+        padding: 0.5rem 1rem;
+      }
+    }
+
     /* Enhanced form validation styles */
     .field-error {
       color: #dc3545;
