@@ -12,14 +12,12 @@ class ImageProcessor {
     try {
       console.log('🎨 Worker procesando filtros:', filters);
       
-      // Crear canvas para procesamiento
-      const canvas = this.supportOffscreenCanvas 
-        ? new OffscreenCanvas(imageData.width, imageData.height)
-        : this.createFallbackCanvas(imageData.width, imageData.height);
+      // Validar entrada
+      if (!imageData || !imageData.data) {
+        throw new Error('ImageData inválido');
+      }
       
-      const ctx = canvas.getContext('2d');
-      
-      // Aplicar filtros pesados usando ImageData manipulation
+      // Procesar directamente los datos sin canvas innecesario
       const processedData = this.applyHeavyFilters(imageData, filters);
       
       return processedData;
@@ -118,34 +116,36 @@ class ImageProcessor {
     }
   }
 
-  // Aplicar contraste optimizado
-  applyContrast(data, contrast) {
-    const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+  // Aplicar contraste corregido (entrada en porcentaje 0-200)
+  applyContrast(data, contrastPercent) {
+    // Convertir porcentaje a factor: 100% = 1.0, 150% = 1.5, 50% = 0.5
+    const contrast = contrastPercent / 100;
     
     for (let i = 0; i < data.length; i += 4) {
-      data[i] = Math.max(0, Math.min(255, factor * (data[i] - 128) + 128));
-      data[i + 1] = Math.max(0, Math.min(255, factor * (data[i + 1] - 128) + 128));
-      data[i + 2] = Math.max(0, Math.min(255, factor * (data[i + 2] - 128) + 128));
+      // Aplicar contraste correctamente
+      data[i] = Math.max(0, Math.min(255, ((data[i] - 128) * contrast) + 128));
+      data[i + 1] = Math.max(0, Math.min(255, ((data[i + 1] - 128) * contrast) + 128));
+      data[i + 2] = Math.max(0, Math.min(255, ((data[i + 2] - 128) * contrast) + 128));
       // Alpha channel unchanged
     }
   }
 
-  // Aplicar saturación optimizada
-  applySaturation(data, saturation) {
-    const sat = saturation / 100;
+  // Aplicar saturación corregida (entrada en porcentaje 0-200)
+  applySaturation(data, saturationPercent) {
+    const saturation = saturationPercent / 100;
     
     for (let i = 0; i < data.length; i += 4) {
       const r = data[i];
       const g = data[i + 1];
       const b = data[i + 2];
       
-      // Convert to grayscale using luminance formula
+      // Usar fórmula de luminancia estándar
       const gray = 0.299 * r + 0.587 * g + 0.114 * b;
       
-      // Apply saturation
-      data[i] = Math.max(0, Math.min(255, gray + sat * (r - gray)));
-      data[i + 1] = Math.max(0, Math.min(255, gray + sat * (g - gray)));
-      data[i + 2] = Math.max(0, Math.min(255, gray + sat * (b - gray)));
+      // Aplicar saturación correctamente
+      data[i] = Math.max(0, Math.min(255, gray + saturation * (r - gray)));
+      data[i + 1] = Math.max(0, Math.min(255, gray + saturation * (g - gray)));
+      data[i + 2] = Math.max(0, Math.min(255, gray + saturation * (b - gray)));
       // Alpha channel unchanged
     }
   }
@@ -161,19 +161,9 @@ class ImageProcessor {
       // Alpha channel unchanged
     }
   }
-
-  // Fallback canvas para navegadores sin OffscreenCanvas
-  createFallbackCanvas(width, height) {
-    // En worker context, esto no funcionará, pero es para compatibilidad
-    return {
-      width,
-      height,
-      getContext: () => null
-    };
-  }
 }
 
-// Worker message handler
+// Worker message handler con mejor manejo de transferable objects
 const processor = new ImageProcessor();
 
 self.onmessage = function(e) {
@@ -185,12 +175,19 @@ self.onmessage = function(e) {
     // Procesar imagen
     const processedData = processor.processImage(imageData, filters);
     
-    // Enviar resultado (usar transferable objects para mejor performance)
+    // CRÍTICO: Clonar buffer antes de transferir para evitar corrupción
+    const clonedBuffer = processedData.data.buffer.slice();
+    
+    // Enviar resultado con transferable object clonado
     self.postMessage({
       id,
       success: true,
-      result: processedData
-    }, [processedData.data.buffer]);
+      result: {
+        data: new Uint8ClampedArray(clonedBuffer),
+        width: processedData.width,
+        height: processedData.height
+      }
+    }, [clonedBuffer]);
     
     console.log(`✅ Worker completó job ${id}`);
     

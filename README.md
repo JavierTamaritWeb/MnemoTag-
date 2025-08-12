@@ -94,6 +94,29 @@
 
 ## 🔧 Instalación y Uso
 
+## 📚 Documentación Completa
+
+### **🎯 Para Usuarios**
+
+- **[Guía de Uso Rápido](#-guía-de-uso-rápido)** - Tutorial paso a paso
+- **[Atajos de Teclado](#️-atajos-de-teclado)** - Controles eficientes
+- **[Solución de Problemas](#-solución-de-problemas)** - Errores comunes
+
+### **🔧 Para Desarrolladores**
+
+- **[Documentación Técnica](docs/)** - Arquitectura y implementación
+- **[Validación Avanzada](docs/ENHANCED_VALIDATION.md)** - Sistema de validación mejorado
+- **[Optimización de Filtros](docs/FILTER_OPTIMIZATION.md)** - Debouncing y cache inteligente
+- **[Integración de Workers](docs/WORKER_INTEGRATION.md)** - Procesamiento asíncrono
+
+### **🤝 Contribuir**
+
+- **[Cómo Contribuir](#-contribuir)** - Guía para colaboradores
+- **[Roadmap](#-roadmap)** - Funcionalidades futuras
+- **[Reportar Bugs](https://github.com/JavierTamaritWeb/MnemoTag/issues)** - Issues de GitHub
+
+## 🔧 Instalación y Uso
+
 ### Método 1: Uso Directo (Recomendado)
 
 ```bash
@@ -226,6 +249,25 @@ php -S localhost:8000
 - **APIs**: Canvas API, File System Access API, Fullscreen API
 - **Workers**: Web Workers para procesamiento optimizado
 - **Filtros**: CSS filters + Canvas API para máximo rendimiento
+
+### **Arquitectura Modular** ⭐ **MEJORADO**
+
+**Estructura de archivos organizada para mejor mantenimiento:**
+
+```
+js/
+├── main.js                 → Lógica principal (5,732 líneas)
+├── managers/
+│   └── security-manager.js → Validación y seguridad (363 líneas extraídas)
+└── utils/
+    └── (próximos módulos)
+```
+
+**Beneficios de la modularización:**
+- ✅ **Mejor mantenimiento**: Código organizado por responsabilidades
+- ✅ **Escalabilidad**: Fácil agregar nuevas funcionalidades
+- ✅ **Reutilización**: Módulos independientes y testeable
+- ✅ **Debugging**: Errores más fáciles de localizar
 
 ### **Optimizaciones de Rendimiento**
 
